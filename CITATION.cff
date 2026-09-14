@@ -7,11 +7,27 @@ authors:
     email: ribo@nilu.no
     orcid: 'https://orcid.org/0000-0002-7468-9096'
     affiliation: NILU
+  - given-names: Berend
+    family-names: Mintjes
+    email: b.a.mintjes@cml.leidenuniv.nl
+    orcid: 'https://orcid.org/0009-0008-3997-4351'
+    affiliation: Leiden University
+  - given-names: Francesco
+    family-names: Barilli
+    email: francesco.barilli@empa.ch
+    orcid: 'https://orcid.org/0009-0008-1189-0260'
+    affiliation: Empa
+  - given-names: Roland
+    family-names: Hischier
+    email: roland.hischier@empa.ch
+    orcid: 'https://orcid.org/0000-0002-1084-7665'
+    affiliation: Empa
 repository-code: 'https://codeberg.org/CE-RISE-software/see-impacts-calculation-service'
 url: 'https://ce-rise-software.codeberg.page/see-impacts-calculation-service/'
 abstract: >-
-  A CE-RISE service for assessing and reporting socio-economic and environmental impacts
-  of products from CE-RISE life cycle assessment models.
+  A CE-RISE containerized service for inspecting approved Brightway background projects and
+  reporting their available databases and impact methods for socio-economic and environmental
+  impact assessment.
 keywords:
   - CE-RISE
   - Open Source

@@ -1,4 +1,4 @@
-"""HTTP scaffold for the CE-RISE SEE impacts calculation service."""
+"""HTTP service for CE-RISE SEE impacts background-project inspection."""
 
 from __future__ import annotations
 
@@ -13,18 +13,26 @@ from .config import RuntimeConfig
 
 
 class ModelVersions(BaseModel):
-    product_system: str = Field(description="Published product-system model version.")
-    lci_dataset: str = Field(description="Published lci-dataset model version.")
-    integrated_lca: str = Field(description="Published integrated-lca model version.")
+    product_system: str = Field(description="Version of the input product-system model.")
+    lci_dataset: str = Field(description="Version of the input lci-dataset model.")
+    integrated_lca: str = Field(description="Version of the output integrated-lca model.")
 
 
 class ComputeRequest(BaseModel):
-    """Reserved HTTP contract for the model-driven calculation workflow."""
+    """CE-RISE input objects used to build an internal Brightway calculation."""
 
     model_versions: ModelVersions
-    product_system: dict[str, Any]
-    lci_datasets: list[dict[str, Any]] = Field(default_factory=list)
-    assessment_context: dict[str, Any] = Field(default_factory=dict)
+    product_system: dict[str, Any] = Field(
+        description="Input object conforming to the selected product-system version."
+    )
+    lci_datasets: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Input objects conforming to the selected lci-dataset version.",
+    )
+    assessment_context: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional information supplied with the assessment inputs.",
+    )
 
 
 def create_app(config: RuntimeConfig | None = None) -> FastAPI:
@@ -33,8 +41,8 @@ def create_app(config: RuntimeConfig | None = None) -> FastAPI:
         title="CE-RISE SEE Impacts Calculation Service",
         version=__version__,
         description=(
-            "Scaffold for validated, model-driven socio-economic and environmental "
-            "impact calculations."
+            "Inspect the configured Brightway background project. "
+            "Impact calculation is not available."
         ),
     )
 
@@ -63,7 +71,7 @@ def create_app(config: RuntimeConfig | None = None) -> FastAPI:
             ) from error
 
         return {
-            "calculation_status": "scaffolded",
+            "calculation_status": "not_available",
             "background": {
                 "project_name": report.declared_project_name,
                 "databases": [database.__dict__ for database in report.databases],
@@ -79,7 +87,7 @@ def create_app(config: RuntimeConfig | None = None) -> FastAPI:
     @app.post(
         "/compute",
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        response_description="Calculation mapping and acceptance fixture are not implemented.",
+        response_description="Impact calculation is not available.",
     )
     async def compute(request: ComputeRequest) -> dict[str, Any]:
         del request
@@ -88,9 +96,8 @@ def create_app(config: RuntimeConfig | None = None) -> FastAPI:
             detail={
                 "code": "CALCULATION_NOT_IMPLEMENTED",
                 "message": (
-                    "The HTTP contract is reserved, but CE-RISE-to-Brightway mapping, "
-                    "HEX Core validation orchestration, and the acceptance fixture are "
-                    "not implemented yet."
+                    "Impact calculation is not available. Use GET /capabilities to verify "
+                    "the configured Brightway project."
                 ),
             },
         )

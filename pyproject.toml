@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "see-impacts-calculation-service"
 version = "0.1.0"
-description = "CE-RISE service scaffold for socio-economic and environmental impact assessment."
+description = "CE-RISE service for inspecting Brightway background projects for SEE impacts assessment."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }

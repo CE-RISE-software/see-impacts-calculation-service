@@ -1,57 +1,34 @@
-# Integration With HEX Core Service
+# HEX Core Status
 
-## Intended Relationship
+## Available Configuration
 
-The SEE impacts calculation service complements `hex-core-service`; it does not replace it.
+The service accepts `HEX_CORE_BASE_URL` and `HTTP_TIMEOUT_SECS` as runtime configuration.
+`GET /health` reports the configured HEX Core base URL.
 
-The intended responsibility split is:
+No available HTTP endpoint calls HEX Core. Configuring these values does not enable model
+validation through `POST /compute`; that endpoint returns `501 CALCULATION_NOT_IMPLEMENTED`.
 
-- `hex-core-service`: CE-RISE model validation, registry access, and record persistence;
-- SEE impacts calculation service: impact-assessment orchestration, Brightway mapping, and
-  construction of the resulting `integrated-lca` record.
+## Source-Level Client
 
-## Future Validation Flow
-
-Before a calculation can begin, the service will validate the selected input contracts through
-HEX Core. The model versions are explicit in the public request so that the calculation is tied
-to published versions of:
-
-- [Product System](https://codeberg.org/CE-RISE-models/product-system);
-- [LCI Dataset](https://codeberg.org/CE-RISE-models/lci-dataset);
-- [Integrated LCA](https://codeberg.org/CE-RISE-models/integrated-lca).
-
-For each model family, the planned validation call is:
+`src/see_impacts_calculation_service/hex_core.py` contains `HexCoreClient`, which constructs the
+standard validation URL:
 
 ```text
 POST /models/{model-family}/versions/{version}:validate
 ```
 
-The input payload and then the constructed result must both be validated through this boundary.
-The calculation service must not maintain an independent validator or redefine the CE-RISE
-models.
+Its `validate` method accepts a payload and optional bearer token. It is not part of the exposed
+HTTP service behavior.
 
-## Authentication Forwarding
+## CE-RISE Data Boundary
 
-The included HEX Core client supports forwarding an incoming bearer token to the delegated
-validation call:
+The `POST /compute` JSON schema uses the following CE-RISE contracts:
 
-```http
-Authorization: Bearer <token>
-```
+- [Product System](https://codeberg.org/CE-RISE-models/product-system): input object
+- [LCI Dataset](https://codeberg.org/CE-RISE-models/lci-dataset): input object(s)
+- [Integrated LCA](https://codeberg.org/CE-RISE-models/integrated-lca): result object
 
-This becomes active only when the compute orchestration is implemented. The current
-`POST /compute` scaffold returns `501` before any delegated request is made.
-
-## Integration Direction
-
-The primary calculation input is payload submission. A client, engineering application, or
-agent assembles the assessment payload and sends it to this service. Record lookup or result
-persistence through HEX Core can be added as a secondary integration mechanism once the
-calculation result contract and acceptance fixture are established.
-
-## Current Boundary
-
-`HEX_CORE_BASE_URL` and `HTTP_TIMEOUT_SECS` are runtime configuration values today, and the
-client implementation is available in the source tree. No outbound request is made by the
-current HTTP endpoints. This is intentional: the sequence and payloads for delegated validation
-must be derived from the model versions and acceptance fixture, not inferred prematurely.
+Brightway remains inside the calculation service. It is not represented by an additional
+CE-RISE model or mapping API. The semantic content of the Product System and LCI Dataset input
+objects is used internally to build the Brightway calculation. The service does not validate
+these payloads or produce an Integrated LCA record through its available HTTP endpoints.

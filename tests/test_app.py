@@ -31,7 +31,7 @@ def test_health_exposes_service_identity(tmp_path):
     assert response.json()["service"] == "see-impacts-calculation-service"
 
 
-def test_compute_is_not_enabled_without_mapping_and_fixture(tmp_path):
+def test_compute_is_not_available(tmp_path):
     app = create_app(
         RuntimeConfig(
             bind_address="127.0.0.1",
@@ -56,3 +56,33 @@ def test_compute_is_not_enabled_without_mapping_and_fixture(tmp_path):
 
     assert response.status_code == 501
     assert response.json()["detail"]["code"] == "CALCULATION_NOT_IMPLEMENTED"
+    assert response.json()["detail"]["message"] == (
+        "Impact calculation is not available. Use GET /capabilities to verify "
+        "the configured Brightway project."
+    )
+
+
+def test_compute_schema_declares_input_and_result_model_versions(tmp_path):
+    app = create_app(
+        RuntimeConfig(
+            bind_address="127.0.0.1",
+            port=8080,
+            hex_core_base_url="http://hex-core-service:8080",
+            http_timeout_secs=30,
+            background_project_dir=tmp_path / "background",
+            background_project_name="cerise_bonsai",
+            brightway_workspace_dir=tmp_path / "brightway-workspace",
+        )
+    )
+
+    properties = app.openapi()["components"]["schemas"]["ModelVersions"]["properties"]
+
+    assert properties["product_system"]["description"] == (
+        "Version of the input product-system model."
+    )
+    assert properties["lci_dataset"]["description"] == (
+        "Version of the input lci-dataset model."
+    )
+    assert properties["integrated_lca"]["description"] == (
+        "Version of the output integrated-lca model."
+    )

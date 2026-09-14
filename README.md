@@ -1,46 +1,31 @@
 # CE-RISE SEE Impacts Calculation Service
 
-A containerized HTTP service for assessing and reporting the socio-economic and environmental
-impacts of products in CE-RISE digital passport workflows.
-
-The service is being prepared as the calculation layer behind impact assessments. It will turn
-approved product information into a structured life cycle assessment result, while keeping
-model validation and record management in `hex-core-service`.
+A containerized HTTP service for inspecting the Brightway 2 background project used in CE-RISE
+socio-economic and environmental impact assessment work.
 
 For the CE-RISE solution and its components, use the
 [CE-RISE Solution portal](https://solution.ce-rise.eu/) as the main entry point for human users.
 
-## Current Status
+## Available Now
 
-The initial service scaffold is operational. It provides:
+The service provides:
 
+- a Brightway 2 compatibility probe for an approved local background project;
 - `GET /health` for service identity and configuration inspection;
-- `GET /capabilities` to verify that an approved Brightway 2 background project can be opened;
+- `GET /capabilities` for Brightway project and method availability;
 - `GET /openapi.json` and interactive API documentation at `/docs`;
-- a reserved `POST /compute` request contract;
 - a container image definition and tag-driven registry publication workflow.
 
-The service does **not** yet execute an inventory or impact calculation. `POST /compute`
-returns `501 CALCULATION_NOT_IMPLEMENTED` until the CE-RISE-to-Brightway mapping, delegated
-validation orchestration, and acceptance fixture are implemented.
+Impact calculation is not an available operation. `POST /compute` accepts its documented JSON
+shape and returns `501 CALCULATION_NOT_IMPLEMENTED`.
 
-## How It Fits CE-RISE
+The published compute schema uses CE-RISE data only: a Product System object and LCI Dataset
+object(s) are inputs, while the selected Integrated LCA version identifies the result object.
+The semantic content of those input objects is the basis for the internal Brightway calculation.
+Brightway is an implementation detail; there is no separate mapping object or API for callers to
+provide.
 
-The eventual calculation flow is deliberately model-driven:
-
-1. A client submits product and life cycle inventory information for an impact assessment.
-2. The service delegates validation of the selected CE-RISE models to `hex-core-service`.
-3. The service maps the validated information to a temporary Brightway foreground calculation
-   against an approved background project.
-4. It returns a validated `integrated-lca` result record with calculation provenance.
-
-The applicable CE-RISE model repositories are:
-
-- [Product System](https://codeberg.org/CE-RISE-models/product-system)
-- [LCI Dataset](https://codeberg.org/CE-RISE-models/lci-dataset)
-- [Integrated LCA](https://codeberg.org/CE-RISE-models/integrated-lca)
-
-## Quick Start
+## Use Locally
 
 Create a virtual environment and install the service:
 
@@ -50,14 +35,14 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[dev]'
 ```
 
-With an approved background project available at the default ignored location, verify it:
+With the approved Brightway project at `data/background`, verify it:
 
 ```bash
 .venv/bin/see-impacts-compatibility
 .venv/bin/python -m pytest
 ```
 
-Run the service locally:
+Start the HTTP service:
 
 ```bash
 . .venv/bin/activate
@@ -66,7 +51,12 @@ curl -sS http://127.0.0.1:8080/health
 curl -sS http://127.0.0.1:8080/capabilities
 ```
 
-For API, deployment, and local-testing guidance, use the published Pages documentation:
+`GET /health` confirms the process is running. `GET /capabilities` opens the configured
+background project and lists the databases and impact methods available to it.
+
+## Documentation
+
+The published Pages site contains endpoint, deployment, and local-testing details:
 
 - [Documentation Home](https://ce-rise-software.codeberg.page/see-impacts-calculation-service/)
 - [API Reference](https://ce-rise-software.codeberg.page/see-impacts-calculation-service/api-reference.html)
@@ -121,5 +111,11 @@ Attribution: CE-RISE project (Grant Agreement No. 101092281) and the individual 
 <a href="https://www.nilu.com" target="_blank" rel="noopener noreferrer">
   <img src="https://nilu.no/wp-content/uploads/2023/12/nilu-logo-seagreen-rgb-300px.png" alt="NILU logo" height="20"/>
 </a>
+<a href="https://www.universiteitleiden.nl" target="_blank" rel="noopener noreferrer">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/UniversiteitLeidenLogo.svg" alt="Leiden University logo" height="30"/>
+</a>
+<a href="https://www.empa.ch" target="_blank" rel="noopener noreferrer">
+  <img src="https://www.empa.ch/image/company_logo?img_id=31464838&t=1762532293211" alt="Empa logo" height="30"/>
+</a>
 
-Developed by NILU (Riccardo Boero — ribo@nilu.no) within the CE-RISE project.
+Developed by NILU (Riccardo Boero - ribo@nilu.no), Leiden University (Mintjes, B.A. (Berend) - b.a.mintjes@cml.leidenuniv.nl), and Empa (Francesco Barilli - francesco.barilli@empa.ch; Roland Hischier - roland.hischier@empa.ch) within the CE-RISE project.

@@ -1,6 +1,6 @@
 {
   "title": "CE-RISE SEE Impacts Calculation Service",
-  "description": "A CE-RISE service for assessing and reporting socio-economic and environmental impacts of products from CE-RISE life cycle assessment models.",
+  "description": "A CE-RISE containerized service for inspecting approved Brightway background projects and reporting their available databases and impact methods for socio-economic and environmental impact assessment.",
   "license": "EUPL-1.2",
   "upload_type": "software",
   "creators": [
@@ -8,6 +8,21 @@
       "name": "Boero, Riccardo",
       "affiliation": "NILU",
       "orcid": "0000-0002-7468-9096"
+    },
+    {
+      "name": "Mintjes, Berend",
+      "affiliation": "Leiden University",
+      "orcid": "0009-0008-3997-4351"
+    },
+    {
+      "name": "Barilli, Francesco",
+      "affiliation": "Empa",
+      "orcid": "0009-0008-1189-0260"
+    },
+    {
+      "name": "Hischier, Roland",
+      "affiliation": "Empa",
+      "orcid": "0000-0002-1084-7665"
     }
   ],
   "keywords": [
@@ -19,7 +34,7 @@
     "Digital Product Passport",
     "Digital Material Passport"
   ],
-  "notes": "Initial service scaffold; CE-RISE-to-Brightway calculation mapping is forthcoming.",
+  "notes": "Provides a Brightway background-project compatibility probe and HTTP service endpoints.",
   "communities": [
     { "identifier": "ce-rise" },
     { "identifier": "impact" }

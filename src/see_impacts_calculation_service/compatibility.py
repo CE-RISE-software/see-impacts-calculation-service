@@ -115,7 +115,6 @@ def run_probe(
     """Load the project and report its registered Brightway databases and methods.
 
     This intentionally does not create a foreground database or run an LCIA demand.
-    A CE-RISE test fixture will supply those calculation inputs later.
     """
 
     resolved_project_dir = project_dir.resolve()

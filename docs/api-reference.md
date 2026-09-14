@@ -36,7 +36,7 @@ Example response shape:
 
 ```json
 {
-  "calculation_status": "scaffolded",
+  "calculation_status": "not_available",
   "background": {
     "project_name": "cerise_bonsai",
     "databases": [
@@ -58,7 +58,8 @@ Example response shape:
 ```
 
 The database names, counts, and method examples are determined by the mounted project. The
-example values reflect the currently approved local project and are not a fixed API guarantee.
+example values reflect the approved local project used for this service and are not a fixed API
+guarantee.
 
 If the project cannot be opened, the endpoint returns `503`:
 
@@ -73,29 +74,31 @@ If the project cannot be opened, the endpoint returns `503`:
 
 ## `POST /compute`
 
-Reserved calculation endpoint. It accepts a CE-RISE-oriented request shape now so clients and
-the implementation can converge on a stable public boundary.
+This endpoint exposes the CE-RISE-oriented request schema below. It does not provide an impact
+calculation operation.
 
 ### Request Schema
 
 - `model_versions`
   - type: object
   - required: yes
-  - fields: `product_system`, `lci_dataset`, and `integrated_lca`, each a string
+  - `product_system`: version of the Product System input model
+  - `lci_dataset`: version of the LCI Dataset input model
+  - `integrated_lca`: version of the Integrated LCA result model
 - `product_system`
   - type: object
   - required: yes
-  - meaning: Product System input following the selected model version
+  - meaning: Product System input object following the selected model version
 - `lci_datasets`
   - type: array of objects
   - required: no
   - default: `[]`
-  - meaning: LCI Dataset inputs following the selected model version
+  - meaning: LCI Dataset input objects following the selected model version
 - `assessment_context`
   - type: object
   - required: no
   - default: `{}`
-  - meaning: assessment information whose detailed contract will be fixed with the mapping
+  - meaning: additional assessment information
 
 ### Request
 
@@ -112,27 +115,31 @@ the implementation can converge on a stable public boundary.
 }
 ```
 
-### Current Response
+### Response
 
-For every request that satisfies the top-level schema, the scaffold returns `501`:
+Every request that satisfies the top-level schema returns `501`:
 
 ```json
 {
   "detail": {
     "code": "CALCULATION_NOT_IMPLEMENTED",
-    "message": "The HTTP contract is reserved, but CE-RISE-to-Brightway mapping, HEX Core validation orchestration, and the acceptance fixture are not implemented yet."
+    "message": "Impact calculation is not available. Use GET /capabilities to verify the configured Brightway project."
   }
 }
 ```
 
-The endpoint currently has no calculation side effects. It does not call HEX Core, create
+The endpoint has no calculation side effects. It does not call HEX Core, create
 foreground data, or modify the background project.
+
+The schema has no Brightway-specific fields. Product System and LCI Dataset objects are the
+inputs; an Integrated LCA object is the calculation result contract. The semantic content of the
+input objects is used internally to build the Brightway calculation. There is no additional
+mapping object to submit or save.
 
 ### Validation Errors
 
 FastAPI returns `422 Unprocessable Entity` when a required top-level field is absent or has an
-incompatible JSON type. Model-level validation will be delegated to HEX Core once the
-calculation workflow is implemented.
+incompatible JSON type.
 
 ## Error Responses
 
@@ -141,4 +148,4 @@ are:
 
 - `BRIGHTWAY_PROJECT_UNAVAILABLE` (`503`): the configured background project cannot be opened;
 - `CALCULATION_NOT_IMPLEMENTED` (`501`): a syntactically valid compute request was received,
-  but the calculation workflow is not available yet.
+  but impact calculation is not available.

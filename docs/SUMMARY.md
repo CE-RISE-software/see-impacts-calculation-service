@@ -6,7 +6,7 @@
 - [API Reference](api-reference.md)
 - [Deployment](deployment.md)
 - [Local Testing](local-testing.md)
-- [Integration With HEX Core Service](integration.md)
+- [HEX Core Status](integration.md)
 
 # Governance
 

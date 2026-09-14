@@ -1,58 +1,51 @@
 # CE-RISE SEE Impacts Calculation Service
 
-This site documents the CE-RISE SEE impacts calculation service. SEE stands for
-socio-economic and environmental impacts.
-
-The service is the dedicated calculation layer for impact assessment in CE-RISE digital
-passport workflows. It is intended to assess a product using approved background data and
-return a structured, traceable life cycle assessment result.
+This site documents the CE-RISE SEE impacts calculation service. SEE stands for socio-economic
+and environmental impacts.
 
 The [CE-RISE Solution portal](https://solution.ce-rise.eu/) is the main entry point for human
 users exploring the wider solution and its components.
 
-## What the Service Does Today
+## Available Service Functions
 
-The current Python implementation establishes and verifies the operational boundary:
+The service provides Brightway project compatibility checks and an HTTP service boundary:
 
-- exposes health, capability, OpenAPI, and interactive documentation endpoints;
-- opens an approved Brightway 2 background project through a read-only source-data pattern;
-- reports the available Brightway databases and impact methods;
-- defines the request shape that will be used for model-driven impact calculations;
-- provides a small client for delegated CE-RISE model validation through `hex-core-service`.
+- `GET /health` reports the service identity and configuration;
+- `GET /capabilities` opens the configured Brightway project and reports databases and methods;
+- `GET /openapi.json` and `GET /docs` provide the machine-readable and interactive API;
+- `see-impacts-compatibility` runs the same Brightway project check from the command line;
+- the container image runs the same HTTP service with externally mounted background data.
 
-The reserved `POST /compute` endpoint currently returns `501` after request validation. It
-does not create foreground data, invoke HEX Core, or run a life cycle inventory or impact
-calculation.
+## Use the Service
 
-## Intended Calculation Flow
+Install and inspect the local project:
 
-1. A client submits product and inventory information with explicit CE-RISE model versions.
-2. The service delegates input validation to `hex-core-service`.
-3. A versioned mapping resolves the validated inputs into a temporary Brightway foreground
-   calculation against an approved background project.
-4. The service constructs and validates an `integrated-lca` result record with calculation
-   provenance.
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -e '.[dev]'
+.venv/bin/see-impacts-compatibility
+```
 
-The input and result contracts are defined by the CE-RISE
-[Product System](https://codeberg.org/CE-RISE-models/product-system),
-[LCI Dataset](https://codeberg.org/CE-RISE-models/lci-dataset), and
-[Integrated LCA](https://codeberg.org/CE-RISE-models/integrated-lca) model repositories.
+Start the HTTP service with the virtual environment active:
+
+```bash
+./scripts/run-local.sh
+curl -sS http://127.0.0.1:8080/health
+curl -sS http://127.0.0.1:8080/capabilities
+```
+
+`POST /compute` is documented so consumers can inspect its JSON schema. It returns
+`501 CALCULATION_NOT_IMPLEMENTED`; it does not provide a calculation operation.
 
 ## Documentation Structure
 
-- [Architecture](architecture.md): service boundary, calculation flow, and data handling
-- [API Overview](api-overview.md): current API behavior and the reserved compute contract
+- [Architecture](architecture.md): active service components and data handling
+- [API Overview](api-overview.md): available endpoints and compute request schema
 - [API Reference](api-reference.md): endpoint-level request, response, and error behavior
 - [Deployment](deployment.md): container image, configuration, and background provisioning
 - [Local Testing](local-testing.md): probe, test, and local container workflows
-- [Integration With HEX Core Service](integration.md): validation and record-management boundary
-- [Project Scope](scope.md): current constraints, planned implementation, and non-goals
-
-## Current Status
-
-The service scaffold, Brightway compatibility probe, container image, and release workflow are
-in place. The next implementation milestone is a versioned CE-RISE-to-Brightway mapping and an
-end-to-end acceptance fixture; only then can `POST /compute` perform calculations.
+- [HEX Core Status](integration.md): available configuration and client boundary
+- [Project Scope](scope.md): available service scope and exclusions
 
 ---
 
@@ -76,5 +69,11 @@ Attribution: CE-RISE project (Grant Agreement No. 101092281) and the individual 
 <a href="https://www.nilu.com" target="_blank" rel="noopener noreferrer">
   <img src="https://nilu.no/wp-content/uploads/2023/12/nilu-logo-seagreen-rgb-300px.png" alt="NILU logo" height="20"/>
 </a>
+<a href="https://www.universiteitleiden.nl" target="_blank" rel="noopener noreferrer">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/UniversiteitLeidenLogo.svg" alt="Leiden University logo" height="30"/>
+</a>
+<a href="https://www.empa.ch" target="_blank" rel="noopener noreferrer">
+  <img src="https://www.empa.ch/image/company_logo?img_id=31464838&t=1762532293211" alt="Empa logo" height="30"/>
+</a>
 
-Developed by NILU (Riccardo Boero — ribo@nilu.no) within the CE-RISE project.
+Developed by NILU (Riccardo Boero - ribo@nilu.no), Leiden University (Mintjes, B.A. (Berend) - b.a.mintjes@cml.leidenuniv.nl), and Empa (Francesco Barilli - francesco.barilli@empa.ch; Roland Hischier - roland.hischier@empa.ch) within the CE-RISE project.

@@ -48,8 +48,8 @@ The service accepts the following environment variables:
 - `BRIGHTWAY_WORKSPACE_DIR`: writable Brightway registry workspace; default
   `runtime/brightway` locally and `/var/lib/see-impacts/brightway` in the container image.
 
-`HEX_CORE_BASE_URL` and `HTTP_TIMEOUT_SECS` are configured now for the forthcoming validation
-workflow. The scaffold does not make an outbound HEX Core request yet.
+`HEX_CORE_BASE_URL` and `HTTP_TIMEOUT_SECS` are accepted runtime settings. The available HTTP
+endpoints do not make an outbound HEX Core request.
 
 ## Background Data Provisioning
 

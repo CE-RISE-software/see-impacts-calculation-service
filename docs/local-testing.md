@@ -1,9 +1,7 @@
 # Local Testing
 
-The current local workflow verifies that the service can safely open an approved Brightway 2
-background project. It also exercises the HTTP scaffold. It does not yet demonstrate an
-end-to-end impact calculation because the CE-RISE-to-Brightway mapping and acceptance fixture
-are not available.
+This page shows how to verify that the service can safely open an approved Brightway 2
+background project, run its tests, and start the HTTP service.
 
 ## Setup
 
@@ -23,7 +21,7 @@ The default background project location is
 
 ## Brightway Compatibility Probe
 
-Run the probe before service development against a new background dataset release:
+Run the probe against the configured background project:
 
 ```bash
 .venv/bin/see-impacts-compatibility
@@ -46,7 +44,7 @@ BRIGHTWAY_WORKSPACE_DIR=/tmp/see-impacts-brightway \
 .venv/bin/python -m pytest
 ```
 
-## HTTP Scaffold
+## HTTP Service
 
 Start the service from the activated virtual environment:
 
@@ -63,9 +61,9 @@ curl -sS http://127.0.0.1:8080/capabilities
 curl -sS http://127.0.0.1:8080/openapi.json
 ```
 
-`POST /compute` validates the top-level request shape, then currently returns
-`501 CALCULATION_NOT_IMPLEMENTED`. This is expected until the first acceptance fixture is
-implemented.
+`POST /compute` validates the top-level request shape and returns
+`501 CALCULATION_NOT_IMPLEMENTED`. Use `GET /capabilities` for the available Brightway project
+inspection operation.
 
 ## Container Smoke Test
 

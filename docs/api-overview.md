@@ -1,34 +1,20 @@
 # API Overview
 
-## Design Goals
+## Available Endpoints
 
-The API is designed as a synchronous service interaction for impact assessment:
-
-- callers can determine whether the service and approved background project are available;
-- callers submit explicit CE-RISE model versions and assessment inputs;
-- validation remains owned by `hex-core-service`;
-- results will be returned as a structured `integrated-lca` record with provenance.
-
-The API is intentionally specific to SEE impact assessment. It is not a generic Brightway API
-and does not expose database-management operations to callers.
-
-## Current API State
-
-The operational endpoints are:
+Use these endpoints with the running HTTP service:
 
 - `GET /health`
 - `GET /capabilities`
 - `GET /openapi.json`
 - `GET /docs`
 
-`POST /compute` already has a request schema, but it is a reserved endpoint. A valid request
-currently receives `501 CALCULATION_NOT_IMPLEMENTED`; no validation call or calculation is
-performed.
+`GET /health` is a liveness check. `GET /capabilities` verifies that the configured Brightway
+project can be opened and reports the databases and methods that the service can inspect.
 
-## Reserved Compute Request
+## Compute Request Schema
 
-The future computation endpoint uses model versions explicitly so the source contracts are
-unambiguous:
+`POST /compute` publishes this JSON request schema:
 
 ```json
 {
@@ -45,19 +31,17 @@ unambiguous:
 
 The fields have these roles:
 
-- `model_versions`: published versions of the CE-RISE Product System, LCI Dataset, and
-  Integrated LCA model contracts;
-- `product_system`: the product assessment input;
-- `lci_datasets`: the supplied inventory datasets used by the product assessment;
-- `assessment_context`: calculation choices and contextual information that will be defined by
-  the mapping and acceptance fixture.
+- `model_versions.product_system` and `model_versions.lci_dataset`: versions of the input model
+  contracts;
+- `model_versions.integrated_lca`: version of the result model contract;
+- `product_system`: input object conforming to the selected Product System version;
+- `lci_datasets`: input object(s) conforming to the selected LCI Dataset version;
+- `assessment_context`: additional assessment information.
 
-The schema deliberately does not expose a Brightway activity, database, method, or project as
-part of the public contract. Those are service-internal implementation details.
+The result belongs in an object conforming to the selected Integrated LCA version. Brightway
+activities, databases, methods, and project state are internal calculation details. The semantic
+content of the CE-RISE input objects is used to construct that internal calculation; no additional
+mapping object, request field, or API resource is required from callers.
 
-## Future Response
-
-After implementation, a successful response will contain the validated `integrated-lca` result
-record, validation reports, and enough calculation provenance to identify the model versions,
-background release, methods, and mapping used. The exact result shape must be established from
-the versioned CE-RISE models and the acceptance fixture, rather than invented in this service.
+The endpoint returns `501 CALCULATION_NOT_IMPLEMENTED`. It has no calculation or validation
+side effects. Use `GET /capabilities` to inspect an available Brightway project.
