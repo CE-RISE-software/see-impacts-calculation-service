@@ -1,0 +1,87 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*.*.*"
+
+jobs:
+    docker-build-and-push:
+        runs-on: codeberg-medium
+        container:
+            image: gcr.io/kaniko-project/executor:debug
+        steps:
+            - name: Prepare build context
+              run: |
+                  set -euo pipefail
+                  if [ -n "${GITHUB_WORKSPACE:-}" ] && [ -f "${GITHUB_WORKSPACE}/Dockerfile" ]; then
+                    echo "CONTEXT_DIR=${GITHUB_WORKSPACE}" >> "$GITHUB_ENV"
+                    exit 0
+                  fi
+                  CANDIDATE="$(find /workspace -maxdepth 6 -type f -name Dockerfile | head -n 1 || true)"
+                  if [ -n "${CANDIDATE}" ]; then
+                    echo "CONTEXT_DIR=$(dirname "${CANDIDATE}")" >> "$GITHUB_ENV"
+                    exit 0
+                  fi
+                  echo "Dockerfile not found in mounted workspace, downloading archive for ${GITHUB_SHA}"
+                  ARCHIVE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz"
+                  mkdir -p /tmp/context
+                  wget -qO /tmp/repo.tar.gz "${ARCHIVE_URL}"
+                  tar -xzf /tmp/repo.tar.gz -C /tmp/context --strip-components=1
+                  if [ ! -f /tmp/context/Dockerfile ]; then
+                    echo "Could not find Dockerfile after archive download."
+                    ls -la /
+                    ls -la /workspace || true
+                    find /workspace -maxdepth 6 -type d -print || true
+                    ls -la /tmp/context || true
+                    exit 1
+                  fi
+                  echo "CONTEXT_DIR=/tmp/context" >> "$GITHUB_ENV"
+
+            - name: Extract version tag
+              id: tag
+              run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+            - name: Build and push image with Kaniko
+              env:
+                  VERSION: ${{ steps.tag.outputs.VERSION }}
+                  REGISTRY_HOST: ${{ vars.REGISTRY_HOST }}
+                  REGISTRY_NAMESPACE: ${{ vars.REGISTRY_NAMESPACE }}
+                  REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+                  REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+              run: |
+                  set -euo pipefail
+                  IMAGE_BASE="${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/see-impacts-calculation"
+                  AUTH="$(printf '%s:%s' "${REGISTRY_USERNAME}" "${REGISTRY_PASSWORD}" | base64 | tr -d '\n')"
+                  mkdir -p /kaniko/.docker
+                  cat > /kaniko/.docker/config.json <<EOF
+                  {"auths":{"${REGISTRY_HOST}":{"auth":"${AUTH}"}}}
+                  EOF
+                  /kaniko/executor \
+                    --context "${CONTEXT_DIR}" \
+                    --dockerfile "${CONTEXT_DIR}/Dockerfile" \
+                    --destination "${IMAGE_BASE}:${VERSION}"
+
+    docker-tag-latest:
+        runs-on: codeberg-small
+        needs:
+            - docker-build-and-push
+        container:
+            image: gcr.io/go-containerregistry/crane:debug
+        steps:
+            - name: Extract version tag
+              id: tag
+              run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+            - name: Tag latest with Crane
+              env:
+                  VERSION: ${{ steps.tag.outputs.VERSION }}
+                  REGISTRY_HOST: ${{ vars.REGISTRY_HOST }}
+                  REGISTRY_NAMESPACE: ${{ vars.REGISTRY_NAMESPACE }}
+                  REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+                  REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+              run: |
+                  set -euo pipefail
+                  IMAGE_BASE="${REGISTRY_HOST}/${REGISTRY_NAMESPACE}/see-impacts-calculation"
+                  crane auth login -u "${REGISTRY_USERNAME}" -p "${REGISTRY_PASSWORD}" "${REGISTRY_HOST}"
+                  crane copy "${IMAGE_BASE}:${VERSION}" "${IMAGE_BASE}:latest"

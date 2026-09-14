@@ -1,13 +1,14 @@
 [book]
-title = "CE-RISE Software Template Documentation"
-authors = ["CE-RISE consortium"]
+title = "CE-RISE SEE Impacts Calculation Service"
+authors = ["CE-RISE consortium", "NILU"]
 language = "en"
 src = "."
+description = "Documentation for the CE-RISE SEE impacts calculation service."
 
 [build]
 build-dir = "book"
 
 [output.html]
-git-repository-url = "https://codeberg.org/CE-RISE-software/template-software"
+git-repository-url = "https://codeberg.org/CE-RISE-software/see-impacts-calculation-service"
 sidebar-header-nav = true
 additional-js = ["theme/custom.js"]

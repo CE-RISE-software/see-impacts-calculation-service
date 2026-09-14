@@ -1,10 +1,11 @@
 # Changelog
 
-All notable changes to the CE-RISE Software XXXX project will be documented in this file.
+All notable changes to the CE-RISE SEE Impacts Calculation Service will be documented in
+this file.
 
-## [0.0.1] - unreleased
+## [Unreleased]
 
 ### Added
-- Initial project structure and repository setup from template: https://ce-rise-software.codeberg.page/template-software/
-- Initial data model structure for XXXX
-- Artifacts built and deployed to pages
+- Python/FastAPI service scaffold with health, capability, and reserved compute endpoints.
+- Brightway 2 compatibility probe for local background projects.
+- HEX Core validation client scaffold and initial service architecture documentation.

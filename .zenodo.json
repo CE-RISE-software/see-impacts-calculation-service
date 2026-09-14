@@ -1,6 +1,6 @@
 {
-  "title": "Project template for software developed within the CE-RISE Horizon Europe project",
-  "description": "Project template for data models developed within the CE-RISE Horizon Europe project.",
+  "title": "CE-RISE SEE Impacts Calculation Service",
+  "description": "A CE-RISE service for assessing and reporting socio-economic and environmental impacts of products from CE-RISE life cycle assessment models.",
   "license": "EUPL-1.2",
   "upload_type": "software",
   "creators": [
@@ -14,10 +14,12 @@
     "CE-RISE",
     "Open Source",
     "Open Science",
+    "Life Cycle Assessment",
+    "Impact Assessment",
     "Digital Product Passport",
     "Digital Material Passport"
   ],
-  "notes": "v0.0.1 - Initial sketch of project template.",
+  "notes": "Initial service scaffold; CE-RISE-to-Brightway calculation mapping is forthcoming.",
   "communities": [
     { "identifier": "ce-rise" },
     { "identifier": "impact" }
@@ -27,7 +29,7 @@
   ],
   "related_identifiers": [
     {
-      "identifier": "https://codeberg.org/CE-RISE-software/template-software",
+      "identifier": "https://codeberg.org/CE-RISE-software/see-impacts-calculation-service",
       "relation": "isSupplementTo",
       "resource_type": "software"
     }
