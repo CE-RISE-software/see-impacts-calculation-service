@@ -29,10 +29,15 @@ python3 -m venv .venv
 .venv/bin/see-impacts-compatibility
 ```
 
-Start the HTTP service with the virtual environment active:
+Start the HTTP service:
 
 ```bash
-./scripts/run-local.sh
+.venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
+```
+
+In another terminal:
+
+```bash
 curl -sS http://127.0.0.1:8080/health
 curl -sS http://127.0.0.1:8080/capabilities
 ```

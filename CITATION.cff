@@ -25,9 +25,9 @@ authors:
 repository-code: 'https://codeberg.org/CE-RISE-software/see-impacts-calculation-service'
 url: 'https://ce-rise-software.codeberg.page/see-impacts-calculation-service/'
 abstract: >-
-  A CE-RISE containerized service for inspecting approved Brightway background projects and
-  reporting their available databases and impact methods for socio-economic and environmental
-  impact assessment.
+  A CE-RISE containerized service that calculates environmental impact indicators from Product
+  System and LCI Dataset inputs using a configured Brightway background, validates Integrated
+  LCA results through HEX Core, and reports request-specific calculation diagnostics.
 keywords:
   - CE-RISE
   - Open Source

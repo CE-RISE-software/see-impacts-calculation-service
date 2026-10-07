@@ -67,13 +67,16 @@ BRIGHTWAY_WORKSPACE_DIR=/tmp/see-impacts-brightway \
 .venv/bin/python -m pytest
 ```
 
+Codeberg runs the same suite on `codeberg-small` for pushes and pull requests. CI builds its
+synthetic Brightway fixture locally; the optional tests requiring the separately supplied
+BONSAI archive remain skipped.
+
 ## HTTP Service
 
-Start the service from the activated virtual environment:
+Start the service from the repository root:
 
 ```bash
-. .venv/bin/activate
-./scripts/run-local.sh
+.venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
 ```
 
 In a second terminal, check the live service and background project:

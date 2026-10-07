@@ -1,6 +1,6 @@
 {
   "title": "CE-RISE SEE Impacts Calculation Service",
-  "description": "A CE-RISE containerized service for inspecting approved Brightway background projects and reporting their available databases and impact methods for socio-economic and environmental impact assessment.",
+  "description": "A CE-RISE containerized service that calculates environmental impact indicators from Product System and LCI Dataset inputs using a configured Brightway background, validates Integrated LCA results through HEX Core, and reports request-specific calculation diagnostics.",
   "license": "EUPL-1.2",
   "upload_type": "software",
   "creators": [
@@ -34,7 +34,7 @@
     "Digital Product Passport",
     "Digital Material Passport"
   ],
-  "notes": "Provides a Brightway background-project compatibility probe and HTTP service endpoints.",
+  "notes": "Provides HTTP calculation and diagnostic endpoints, impact-method discovery, and Brightway background-project compatibility checks.",
   "communities": [
     { "identifier": "ce-rise" },
     { "identifier": "impact" }

@@ -82,8 +82,12 @@ With the approved Brightway project at `data/background`, verify it:
 Start the HTTP service:
 
 ```bash
-. .venv/bin/activate
-./scripts/run-local.sh
+.venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
+```
+
+In another terminal, check it:
+
+```bash
 curl -sS http://127.0.0.1:8080/health
 curl -sS http://127.0.0.1:8080/capabilities
 curl -sS http://127.0.0.1:8080/methods

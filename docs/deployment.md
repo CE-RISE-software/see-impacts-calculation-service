@@ -9,7 +9,7 @@ the resulting image.
 ## Image Publication
 
 Pushing a `v*.*.*` tag to the canonical Codeberg repository triggers the Forgejo release
-workflow. It builds and publishes:
+workflow. The test suite must pass before it builds and publishes:
 
 ```text
 $REGISTRY_HOST/$REGISTRY_NAMESPACE/see-impacts-calculation:<tag>
