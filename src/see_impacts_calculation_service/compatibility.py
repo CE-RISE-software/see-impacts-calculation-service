@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import sys
+from contextlib import redirect_stdout
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,9 @@ class DatabaseSummary:
     backend: str | None
     format: str | None
     activity_count: int | None
+    sample_key: tuple[str, str]
+    sample_exchange_count: int
+    datapackage_resource_count: int
 
 
 @dataclass(frozen=True)
@@ -34,6 +38,8 @@ class CompatibilityReport:
     databases: list[DatabaseSummary]
     method_count: int
     method_examples: list[list[str]]
+    sample_method: list[str]
+    sample_method_factor_count: int
 
 
 def _version_string(value: Any) -> str:
@@ -66,9 +72,9 @@ def _declared_project_name(project_dir: Path) -> str:
 def _load_brightway_project(
     project_dir: Path, project_name: str, workspace_dir: Path
 ) -> tuple[Any, Any]:
-    """Activate the supplied project through a writable Brightway 2 workspace.
+    """Activate the supplied project through a writable Brightway 2.5 workspace.
 
-    Brightway 2 stores its registry in a base directory, while the supplied project is
+    Brightway stores its registry in a base directory, while the supplied project is
     an immutable source artifact. A symlink exposes that artifact under Brightway's
     expected hashed directory name without writing to the source data.
     """
@@ -84,7 +90,7 @@ def _load_brightway_project(
     try:
         import bw2calc
         import bw2data
-        from bw2data.filesystem import safe_filename
+        from bw2data.project import safe_filename
 
         linked_project_dir = workspace_dir / safe_filename(project_name)
         if linked_project_dir.exists() or linked_project_dir.is_symlink():
@@ -100,23 +106,18 @@ def _load_brightway_project(
         if isinstance(error, BrightwayCompatibilityError):
             raise
         raise BrightwayCompatibilityError(
-            "Brightway 2 core packages could not activate the supplied project. "
-            "The project may require an import step or a different Brightway 2 release."
+            "Brightway 2.5 could not activate the supplied project. "
+            "The project may require an import step or a different Brightway release."
         ) from error
 
     return bw2data, bw2calc
 
 
-def run_probe(
+def _verified_project(
     project_dir: Path,
     workspace_dir: Path,
     expected_project_name: str | None = None,
-) -> CompatibilityReport:
-    """Load the project and report its registered Brightway databases and methods.
-
-    This intentionally does not create a foreground database or run an LCIA demand.
-    """
-
+) -> tuple[Any, Any, str, Path]:
     resolved_project_dir = project_dir.resolve()
     if not resolved_project_dir.is_dir():
         raise BrightwayCompatibilityError(
@@ -133,16 +134,69 @@ def run_probe(
     bw2data, bw2calc = _load_brightway_project(
         resolved_project_dir, declared_name, workspace_dir.resolve()
     )
-    databases = [
-        DatabaseSummary(
-            name=name,
-            backend=metadata.get("backend"),
-            format=metadata.get("format"),
-            activity_count=metadata.get("number"),
-        )
-        for name, metadata in sorted(bw2data.databases.items())
-    ]
-    method_examples = [list(method) for method in sorted(bw2data.methods)[:5]]
+    return bw2data, bw2calc, declared_name, resolved_project_dir
+
+
+def list_methods(
+    project_dir: Path,
+    workspace_dir: Path,
+    expected_project_name: str | None = None,
+) -> tuple[str, list[list[str]]]:
+    """List all registered impact-method identifiers in the supplied project."""
+
+    bw2data, _, declared_name, _ = _verified_project(
+        project_dir, workspace_dir, expected_project_name
+    )
+    try:
+        methods = [list(method) for method in sorted(bw2data.methods)]
+    except Exception as error:
+        raise BrightwayCompatibilityError(
+            "Brightway could not list impact methods from the supplied background."
+        ) from error
+    return declared_name, methods
+
+
+def run_probe(
+    project_dir: Path,
+    workspace_dir: Path,
+    expected_project_name: str | None = None,
+) -> CompatibilityReport:
+    """Read background databases, exchanges, datapackages, and method factors.
+
+    This intentionally does not create a foreground database or run an LCIA demand.
+    """
+
+    bw2data, bw2calc, declared_name, resolved_project_dir = _verified_project(
+        project_dir, workspace_dir, expected_project_name
+    )
+    try:
+        databases = []
+        for name, metadata in sorted(bw2data.databases.items()):
+            database = bw2data.Database(name)
+            sample = next(iter(database))
+            databases.append(
+                DatabaseSummary(
+                    name=name,
+                    backend=metadata.get("backend"),
+                    format=metadata.get("format"),
+                    activity_count=metadata.get("number"),
+                    sample_key=sample.key,
+                    sample_exchange_count=sum(1 for _ in sample.exchanges()),
+                    datapackage_resource_count=len(database.datapackage().resources),
+                )
+            )
+        methods = sorted(bw2data.methods)
+        sample_method = methods[0]
+        sample_method_factor_count = len(bw2data.Method(sample_method).load())
+    except (StopIteration, IndexError) as error:
+        raise BrightwayCompatibilityError(
+            "The supplied background has an empty database or no impact method."
+        ) from error
+    except Exception as error:
+        raise BrightwayCompatibilityError(
+            "Brightway could not read a database record, its exchanges, a processed "
+            "datapackage, or an impact method from the supplied background."
+        ) from error
 
     return CompatibilityReport(
         project_directory=str(resolved_project_dir),
@@ -151,14 +205,16 @@ def run_probe(
         bw2calc_version=_version_string(getattr(bw2calc, "__version__", "unknown")),
         databases=databases,
         method_count=len(bw2data.methods),
-        method_examples=method_examples,
+        method_examples=[list(method) for method in methods[:5]],
+        sample_method=list(sample_method),
+        sample_method_factor_count=sample_method_factor_count,
     )
 
 
 def main() -> int:
     config = RuntimeConfig.from_env()
     parser = argparse.ArgumentParser(
-        description="Inspect a Brightway 2 background project without running an LCIA."
+        description="Inspect a Brightway 2.5 background project without running an LCIA."
     )
     parser.add_argument(
         "--project-dir",
@@ -180,7 +236,8 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        report = run_probe(args.project_dir, args.workspace_dir, args.project_name)
+        with redirect_stdout(sys.stderr):
+            report = run_probe(args.project_dir, args.workspace_dir, args.project_name)
     except BrightwayCompatibilityError as error:
         print(f"compatibility probe failed: {error}", file=sys.stderr)
         return 1

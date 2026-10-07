@@ -32,6 +32,9 @@ class RuntimeConfig:
     background_project_dir: Path
     background_project_name: str
     brightway_workspace_dir: Path
+    hex_core_bearer_token: str | None = None
+    background_database_name: str = "bonsai"
+    biosphere_database_name: str = "biosphere3"
 
     @classmethod
     def from_env(cls) -> "RuntimeConfig":
@@ -54,4 +57,7 @@ class RuntimeConfig:
             brightway_workspace_dir=Path(
                 _read_string("BRIGHTWAY_WORKSPACE_DIR", "runtime/brightway")
             ).resolve(),
+            hex_core_bearer_token=os.environ.get("HEX_CORE_BEARER_TOKEN") or None,
+            background_database_name=_read_string("BACKGROUND_DATABASE_NAME", "bonsai"),
+            biosphere_database_name=_read_string("BIOSPHERE_DATABASE_NAME", "biosphere3"),
         )

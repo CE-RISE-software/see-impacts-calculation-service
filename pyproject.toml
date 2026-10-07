@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "see-impacts-calculation-service"
-version = "0.1.0"
-description = "CE-RISE service for inspecting Brightway background projects for SEE impacts assessment."
+version = "0.0.1"
+description = "CE-RISE service for calculating and validating environmental impact results."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }
@@ -20,11 +20,13 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-  "bw2calc==1.8.2",
-  "bw2data==3.6.6",
+  "bw2calc==2.5.0",
+  "bw2data==4.7",
+  "bw-processing>=1.6,<2",
   "fastapi==0.115.12",
   "httpx>=0.27,<1",
-  "numpy>=1.26,<2",
+  "numpy>=2,<3",
+  "pint>=0.26,<1",
   "uvicorn[standard]>=0.30,<1",
 ]
 

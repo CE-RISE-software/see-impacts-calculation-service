@@ -12,6 +12,9 @@ The service provides Brightway project compatibility checks and an HTTP service 
 
 - `GET /health` reports the service identity and configuration;
 - `GET /capabilities` opens the configured Brightway project and reports databases and methods;
+- `GET /methods` lists the identifiers accepted by the compute endpoints;
+- `POST /compute` calculates and validates one Integrated LCA environmental result;
+- `POST /compute/diagnostics` reports request-specific calculation feasibility;
 - `GET /openapi.json` and `GET /docs` provide the machine-readable and interactive API;
 - `see-impacts-compatibility` runs the same Brightway project check from the command line;
 - the container image runs the same HTTP service with externally mounted background data.
@@ -34,8 +37,13 @@ curl -sS http://127.0.0.1:8080/health
 curl -sS http://127.0.0.1:8080/capabilities
 ```
 
-`POST /compute` is documented so consumers can inspect its JSON schema. It returns
-`501 CALCULATION_NOT_IMPLEMENTED`; it does not provide a calculation operation.
+`POST /compute` validates input models through HEX Core, calculates an environmental indicator,
+and validates the Integrated LCA result before returning it. It returns `422` for invalid
+inputs or unresolved links, `503` when required schemas or validation are unavailable, and a
+structured `not_calculable` response when the technosphere is singular.
+
+The [compatibility probe](local-testing.md) verifies read access to the supplied background
+data. It does not establish that every foreground request will be solvable.
 
 ## Documentation Structure
 

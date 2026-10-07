@@ -40,16 +40,24 @@ The service accepts the following environment variables:
 - `BIND_ADDRESS`: HTTP bind address; default `0.0.0.0`;
 - `PORT`: HTTP port; default `8080`;
 - `HEX_CORE_BASE_URL`: HEX Core base URL; default `http://127.0.0.1:8080`;
+- `HEX_CORE_BEARER_TOKEN`: optional service-to-service token for HEX Core validation requests;
 - `HTTP_TIMEOUT_SECS`: delegated HTTP timeout; default `30`;
 - `BACKGROUND_PROJECT_DIR`: approved Brightway project directory; default
   `data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`;
 - `BACKGROUND_PROJECT_NAME`: expected project name from `.project-name.json`; default
   `cerise_bonsai`;
+- `BACKGROUND_DATABASE_NAME`: Brightway database used for external technosphere links;
+  default `bonsai`;
+- `BIOSPHERE_DATABASE_NAME`: Brightway database used for elementary flows; default `biosphere3`;
 - `BRIGHTWAY_WORKSPACE_DIR`: writable Brightway registry workspace; default
   `runtime/brightway` locally and `/var/lib/see-impacts/brightway` in the container image.
 
-`HEX_CORE_BASE_URL` and `HTTP_TIMEOUT_SECS` are accepted runtime settings. The available HTTP
-endpoints do not make an outbound HEX Core request.
+`POST /compute` and `POST /compute/diagnostics` call HEX Core to retrieve each requested
+input model's JSON Schema and validate the Product System and LCI Dataset objects.
+`POST /compute` also validates the generated Integrated LCA object through HEX Core. Provision
+a reachable HEX Core registry
+and an appropriate service identity before using that endpoint. The bearer token is never
+returned by `GET /health`.
 
 ## Background Data Provisioning
 
@@ -83,6 +91,7 @@ After startup, verify both liveness and project readiness:
 ```bash
 curl -sS http://127.0.0.1:8080/health
 curl -sS http://127.0.0.1:8080/capabilities
+curl -sS http://127.0.0.1:8080/methods
 ```
 
 ## Operational Readiness

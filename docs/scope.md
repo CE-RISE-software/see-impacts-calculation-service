@@ -2,19 +2,45 @@
 
 ## Available Scope
 
-The repository provides a containerized Python HTTP service for inspecting an approved Brightway
-background project. The usable operations are the command-line compatibility probe, health
-endpoint, capability endpoint, OpenAPI document, and container release workflow.
+The repository provides a containerized Python HTTP service for calculating one environmental
+impact indicator from CE-RISE Product System and LCI Dataset inputs. The usable operations
+include the command-line compatibility probe, health, capability, and method-discovery
+endpoints, compute and diagnostic endpoints, OpenAPI document, and container release workflow.
+Input and output model validation is delegated to HEX Core.
 
 Background source data remains local and read-only. Brightway registry state uses a separate
 writable workspace. The API and operating guidance are published through the repository's
 Codeberg Pages site.
 
+## Calculation and Access Check
+
+`POST /compute` accepts CE-RISE Product System and LCI Dataset objects, a requested functional
+unit, and an impact method. A successful calculation returns a HEX Core-validated Integrated
+LCA object containing one environmental indicator. A singular matrix returns a structured
+diagnostic without a score. `POST /compute/diagnostics` makes the same calculation attempt
+but does not publish the score or result object.
+
+The current background check verifies read access to the supplied BONSAI archive through
+Brightway: database registration, one record and its exchanges per database, processed
+datapackages, and one registered impact method's factors. It does not prove that a particular
+foreground request will calculate. The source archive is accessed read-only.
+
+Foreground assembly is available as an internal module. It constructs selected activities,
+product outputs, and exact internal input links from CE-RISE records and identifies the reference
+output. It retains external background inputs and elementary flows for the calculation runner.
+Only a foreground graph with no unresolved boundaries can be materialized into a separate
+writable Brightway database; the HTTP endpoints instead use transient datapackages.
+
+An internal calculation path combines the foreground with background and impact-method
+datapackages in memory. It uses exact background activity and biosphere flow identifiers and
+converts compatible units. The synthetic numerical test succeeds. The supplied BONSAI snapshot
+does not currently yield a score for the tested foreground demand because its combined
+technosphere is singular. This does not change the source archive or rule out other requests.
+
 ## Not Provided
 
-- impact calculation through `POST /compute`;
-- Product System, LCI Dataset, or Integrated LCA payload validation;
-- HEX Core calls from the HTTP service;
+- a guarantee that every request is calculable with the supplied background;
+- uncertainty quantification, sensitivity analysis, or a multi-indicator assessment;
 - a Brightway database-management API;
 - background datasets embedded in the source repository or container image;
 - a general-purpose LCA application, CLI, or notebook interface.

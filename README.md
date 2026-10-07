@@ -1,7 +1,9 @@
 # CE-RISE SEE Impacts Calculation Service
 
-A containerized HTTP service for inspecting the Brightway 2 background project used in CE-RISE
-socio-economic and environmental impact assessment work.
+A containerized HTTP service that calculates environmental impacts from CE-RISE Product System
+and LCI Dataset objects and returns HEX Core-validated Integrated LCA results when the
+calculation succeeds. It also inspects an approved Brightway 2.5 background project and
+diagnoses requests that cannot be solved.
 
 For the CE-RISE solution and its components, use the
 [CE-RISE Solution portal](https://solution.ce-rise.eu/) as the main entry point for human users.
@@ -10,20 +12,55 @@ For the CE-RISE solution and its components, use the
 
 The service provides:
 
-- a Brightway 2 compatibility probe for an approved local background project;
+- a Brightway 2.5 compatibility probe for an approved local background project;
 - `GET /health` for service identity and configuration inspection;
 - `GET /capabilities` for Brightway project and method availability;
+- `GET /methods` for the complete set of registered impact-method identifiers;
+- `POST /compute` for one environmental impact indicator in an Integrated LCA object;
+- `POST /compute/diagnostics` for request-specific calculation checks, including identified
+  activities when the technosphere is singular;
 - `GET /openapi.json` and interactive API documentation at `/docs`;
 - a container image definition and tag-driven registry publication workflow.
 
-Impact calculation is not an available operation. `POST /compute` accepts its documented JSON
-shape and returns `501 CALCULATION_NOT_IMPLEMENTED`.
+`POST /compute` requires a functional unit and a registered impact method. It delegates
+Product System and LCI Dataset conformance checks to HEX Core, assembles the foreground,
+calculates an impact score, builds an Integrated LCA object, and validates that object through
+HEX Core before returning it. Invalid inputs or unresolved calculation links return `422`;
+a singular technosphere returns a structured `not_calculable` diagnostic instead of a score.
+HEX Core must have the requested JSON Schema artifacts and be reachable at `HEX_CORE_BASE_URL`;
+set `HEX_CORE_BEARER_TOKEN` when it requires a service-to-service bearer token.
 
-The published compute schema uses CE-RISE data only: a Product System object and LCI Dataset
-object(s) are inputs, while the selected Integrated LCA version identifies the result object.
-The semantic content of those input objects is the basis for the internal Brightway calculation.
+`POST /compute/diagnostics` accepts the same request and attempts an in-memory calculation.
+It reports `calculable` or `not_calculable`, never a score. For a singular
+technosphere, it reports small identified activity groups and whether they are reachable from
+the requested demand. These findings do not establish that foreground detail is missing and
+are not an exhaustive diagnosis.
+
+The published compute schema uses CE-RISE data plus the requested Brightway impact method:
+a Product System object and LCI Dataset object(s) are inputs, while the selected Integrated LCA
+version identifies the result object. The semantic content of the input objects is the basis
+for the internal Brightway calculation.
 Brightway is an implementation detail; there is no separate mapping object or API for callers to
 provide.
+
+Successful results record the configured background project and database identifiers, the
+service version, and the `bw2data` and `bw2calc` versions used for the calculation. The
+background identifiers are not a content checksum or dataset version.
+
+The internal foreground builder assembles selected activities, product outputs, and internal
+input links from those objects. External background inputs and elementary flows are retained for
+the calculation stage. An internal runner links exact background and biosphere identifiers,
+converts compatible units, and combines the foreground with Brightway datapackages in memory.
+It does not write to the BONSAI archive. The supplied BONSAI snapshot currently yields a
+singular technosphere for the tested calculation, so no numerical result is claimed for it.
+
+## Background Access
+
+The compatibility probe verifies that Brightway can open the supplied BONSAI data, read a
+record and its exchanges from each bundled database, open each processed datapackage, and load
+factors from a registered impact method. It does not calculate impacts or validate a foreground
+inventory. See [Local Testing](docs/local-testing.md) for the optional test against the local
+archive.
 
 ## Use Locally
 
@@ -49,10 +86,12 @@ Start the HTTP service:
 ./scripts/run-local.sh
 curl -sS http://127.0.0.1:8080/health
 curl -sS http://127.0.0.1:8080/capabilities
+curl -sS http://127.0.0.1:8080/methods
 ```
 
 `GET /health` confirms the process is running. `GET /capabilities` opens the configured
-background project and lists the databases and impact methods available to it.
+background project and lists its databases and sample methods. `GET /methods` lists every
+registered method identifier.
 
 ## Documentation
 
