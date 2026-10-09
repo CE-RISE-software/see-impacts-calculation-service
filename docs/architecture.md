@@ -18,23 +18,23 @@ The service is a containerized Python HTTP application with these active compone
 - `integrated_lca_result.py` builds one environmental indicator and its input references in
   the Integrated LCA result structure.
 
-The HTTP application does not expose Brightway database management. Background data remains an
-external deployment input.
+The HTTP application does not expose Brightway database management. The repository includes a
+BONSAI background archive, expanded into the container image during the build.
 
 ## Background Data and Brightway State
 
-The current local project is `cerise_bonsai`, located by default at
-`data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`. It is excluded from
-Git and is not included in the container image. Deployments must mount or otherwise provision an
-approved background dataset.
+The bundled project is `cerise_bonsai`, located by default at
+`data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`. The compressed
+archive is tracked in Git. The expanded local project is ignored; the image expands the archive
+at build time.
 
 Brightway project state is mutable and process-global. The compatibility probe uses
-`BRIGHTWAY_WORKSPACE_DIR` for this writable state and keeps the mounted background project
+`BRIGHTWAY_WORKSPACE_DIR` for this writable state and keeps the background project
 immutable. Do not use the background source directory as the Brightway workspace.
 
 ## API Boundary
 
-`GET /capabilities` is the operational endpoint for checking the mounted background project;
+`GET /capabilities` is the operational endpoint for checking the background project;
 `GET /methods` lists every registered impact-method identifier.
 `POST /compute` exposes a JSON schema with model-version fields for `product-system`,
 `lci-dataset`, and `integrated-lca`, and requires a functional unit and impact method. It

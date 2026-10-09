@@ -42,5 +42,4 @@ technosphere is singular. This does not change the source archive or rule out ot
 - a guarantee that every request is calculable with the supplied background;
 - uncertainty quantification, sensitivity analysis, or a multi-indicator assessment;
 - a Brightway database-management API;
-- background datasets embedded in the source repository or container image;
 - a general-purpose LCA application, CLI, or notebook interface.

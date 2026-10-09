@@ -2,9 +2,8 @@
 
 ## Service Form
 
-This project is deployed as a containerized HTTP service. The repository includes a `Dockerfile`
-and `.dockerignore`; the background dataset is deliberately excluded from the build context and
-the resulting image.
+This project is deployed as a containerized HTTP service. The repository includes the BONSAI
+background archive. The `Dockerfile` expands it into the image at the default project path.
 
 ## Image Publication
 
@@ -42,7 +41,7 @@ The service accepts the following environment variables:
 - `HEX_CORE_BASE_URL`: HEX Core base URL; default `http://127.0.0.1:8080`;
 - `HEX_CORE_BEARER_TOKEN`: optional service-to-service token for HEX Core validation requests;
 - `HTTP_TIMEOUT_SECS`: delegated HTTP timeout; default `30`;
-- `BACKGROUND_PROJECT_DIR`: approved Brightway project directory; default
+- `BACKGROUND_PROJECT_DIR`: Brightway project directory; default
   `data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`;
 - `BACKGROUND_PROJECT_NAME`: expected project name from `.project-name.json`; default
   `cerise_bonsai`;
@@ -59,32 +58,29 @@ a reachable HEX Core registry
 and an appropriate service identity before using that endpoint. The bearer token is never
 returned by `GET /health`.
 
-## Background Data Provisioning
+## Background Data
 
-The image contains code and dependencies only. Background data must be provided separately and
-treated as immutable. The service creates Brightway registry state in
+The image contains the BONSAI Brightway project from the repository and treats it as immutable.
+The service creates Brightway registry state in
 `BRIGHTWAY_WORKSPACE_DIR`; this path must be writable and must not be the background source
 directory.
+
+BONSAI publishes its data under [CC BY 4.0](https://bonsai.uno/terms). The computing module's
+source code has a separate EUPL-1.2 license. Attribute the background data to BONSAI when
+redistributing the image.
 
 Each concurrently running worker should use its own writable Brightway workspace. This avoids
 concurrent mutation of Brightway's process-global project registry.
 
 ## Run Example
 
-From a local checkout where the approved project is stored under the ignored
-`data/background` directory:
-
 ```bash
 podman run --rm -p 8080:8080 \
-  -e BACKGROUND_PROJECT_DIR=/data/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
-  -e BACKGROUND_PROJECT_NAME=cerise_bonsai \
-  -e BRIGHTWAY_WORKSPACE_DIR=/var/lib/see-impacts/brightway \
-  -v "$PWD/data/background:/data:ro,Z" \
   see-impacts-calculation-service:local
 ```
 
-The `:Z` suffix is appropriate for Podman on SELinux-enabled hosts. Use the equivalent
-read-only volume syntax required by the target container runtime.
+Set `HEX_CORE_BASE_URL` to a reachable HEX Core instance before calling `POST /compute`.
+`BACKGROUND_PROJECT_DIR` can still select another approved project when needed.
 
 After startup, verify both liveness and project readiness:
 

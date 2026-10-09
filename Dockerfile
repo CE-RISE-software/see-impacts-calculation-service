@@ -12,8 +12,13 @@ RUN useradd --create-home --shell /usr/sbin/nologin appuser \
 
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
+COPY data/background/cerise_bonsai.tar.gz ./data/background/
 
-RUN pip install --no-cache-dir .
+RUN mkdir -p data/background/projects \
+    && tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects \
+    && chmod -R a-w data/background/projects \
+    && rm data/background/cerise_bonsai.tar.gz \
+    && pip install --no-cache-dir .
 
 EXPOSE 8080
 

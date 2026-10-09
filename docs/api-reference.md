@@ -63,7 +63,7 @@ Example response shape:
 }
 ```
 
-The database names, counts, and method examples are determined by the mounted project. The
+The database names, counts, and method examples are determined by the configured project. The
 example values reflect the approved local project used for this service and are not a fixed API
 guarantee. Listing methods does not prove that an LCIA will produce a finite score.
 
@@ -232,7 +232,7 @@ are illustrative and do not represent a verified BONSAI result. The project iden
 which configured background was used; it is not a content checksum or dataset version. The
 toolchain versions come from the Brightway runtime used for the calculation. The
 endpoint does not write foreground records
-or modify the mounted background archive. It validates each input model, resolves the reference
+or modify the background project. It validates each input model, resolves the reference
 flow and foreground links, runs a calculation in memory, and validates the output model.
 
 Apart from the requested impact-method identifier, the schema has no Brightway-specific

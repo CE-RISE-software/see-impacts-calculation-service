@@ -13,6 +13,13 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[dev]'
 ```
 
+Expand the background archive after cloning the repository:
+
+```bash
+mkdir -p data/background/projects
+tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
+```
+
 The default background project location is
 `data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`. Override it with
 `BACKGROUND_PROJECT_DIR` when an approved dataset is located elsewhere. The separate
@@ -32,7 +39,7 @@ JSON. It also reads a record and its exchanges from each database, opens their p
 datapackages, and loads factors from one method. It does not create foreground data or run an
 LCIA calculation. The writable workspace is separate from the read-only source archive.
 
-Run the optional regression check against an approved local snapshot by setting its path:
+Run the optional regression check against the included snapshot by setting its path:
 
 ```bash
 SEE_IMPACTS_TEST_BACKGROUND_DIR="$PWD/data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9" \
@@ -68,7 +75,7 @@ BRIGHTWAY_WORKSPACE_DIR=/tmp/see-impacts-brightway \
 ```
 
 Codeberg runs the same suite on `codeberg-small` for pushes and pull requests. CI builds its
-synthetic Brightway fixture locally; the optional tests requiring the separately supplied
+synthetic Brightway fixture locally; the optional tests requiring extraction of the included
 BONSAI archive remain skipped.
 
 ## HTTP Service
@@ -102,15 +109,12 @@ Build the image locally:
 podman build -t see-impacts-calculation-service:local .
 ```
 
-Run it with the approved local background directory mounted read-only:
+Run it with the included BONSAI background project:
 
 ```bash
 podman run --rm -p 8080:8080 \
-  -e BACKGROUND_PROJECT_DIR=/data/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
-  -e BRIGHTWAY_WORKSPACE_DIR=/var/lib/see-impacts/brightway \
-  -v "$PWD/data/background:/data:ro,Z" \
   see-impacts-calculation-service:local
 ```
 
 Then call `GET /capabilities`. A successful response proves that the container can inspect the
-mounted background project without baking it into the image.
+bundled background project.

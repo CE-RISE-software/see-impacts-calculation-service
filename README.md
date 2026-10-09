@@ -72,9 +72,11 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[dev]'
 ```
 
-With the approved Brightway project at `data/background`, verify it:
+Expand the included BONSAI archive, then verify the Brightway project:
 
 ```bash
+mkdir -p data/background/projects
+tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
 .venv/bin/see-impacts-compatibility
 .venv/bin/python -m pytest
 ```
@@ -108,11 +110,14 @@ The published Pages site contains endpoint, deployment, and local-testing detail
 
 ## Background Data
 
-The default local Brightway project is
-`data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`. It is excluded from
-Git and container images. Every deployment must separately approve and provision its background
-data at `BACKGROUND_PROJECT_DIR`, with a distinct writable
-`BRIGHTWAY_WORKSPACE_DIR` for Brightway state.
+The repository includes `data/background/cerise_bonsai.tar.gz`. Extract it locally as shown
+above; the container image extracts it during the build. The default Brightway project is
+`data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`.
+The expanded local project remains untracked. Use a distinct writable
+`BRIGHTWAY_WORKSPACE_DIR` for Brightway state. See
+[Background Data](data/background/README.md) for the archive checksum and BONSAI attribution.
+BONSAI publishes its data under [CC BY 4.0](https://bonsai.uno/terms); the computing module's
+source code is licensed separately under EUPL-1.2.
 
 ## Container Releases
 
@@ -126,7 +131,9 @@ The same release image is promoted to `latest`. Before the first release, config
 repository-level Forgejo variables `REGISTRY_HOST` and `REGISTRY_NAMESPACE`, plus the
 `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` secrets.
 
-The released image never includes background data. See the [deployment documentation](https://ce-rise-software.codeberg.page/see-impacts-calculation-service/deployment.html) for a container run example.
+The released image includes the BONSAI background project from this repository. See the
+[deployment documentation](https://ce-rise-software.codeberg.page/see-impacts-calculation-service/deployment.html)
+for a container run example.
 
 
 ## License

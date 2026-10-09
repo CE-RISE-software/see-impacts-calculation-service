@@ -7,8 +7,8 @@ __pycache__/
 build/
 dist/
 
-# Local Brightway projects and licensed background datasets
-data/background/
+# Expanded local Brightway project (the source archive is tracked)
+data/background/projects/
 
 # Local runtime state
 runtime/

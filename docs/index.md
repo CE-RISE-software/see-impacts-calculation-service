@@ -17,7 +17,7 @@ The service provides Brightway project compatibility checks and an HTTP service 
 - `POST /compute/diagnostics` reports request-specific calculation feasibility;
 - `GET /openapi.json` and `GET /docs` provide the machine-readable and interactive API;
 - `see-impacts-compatibility` runs the same Brightway project check from the command line;
-- the container image runs the same HTTP service with externally mounted background data.
+- the container image runs the same HTTP service with the bundled BONSAI background project.
 
 ## Use the Service
 
