@@ -1,7 +1,6 @@
 # Local Testing
 
-This page shows how to verify that the service can safely open an approved Brightway 2.5
-background project, run its tests, and start the HTTP service.
+Run the complete test suite or prepare the bundled background for a local HTTP service.
 
 ## Setup
 
@@ -10,9 +9,23 @@ Create a virtual environment and install the service with its test dependencies:
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install -e '.[dev]'
-.venv/bin/python -m pip install -r requirements-background-build.txt
+.venv/bin/python -m pip install -r requirements-test.txt
 ```
+
+## Tests
+
+```bash
+.venv/bin/python -m pytest
+```
+
+The suite builds a fresh Brightway project from the bundled seed and BONSAI IO release, then
+sends the PV fixture to `POST /compute`. It fetches the latest published Product System, LCI
+Dataset, and Integrated LCA schemas from Codeberg to validate the inputs and result. The same
+suite checks concurrent requests with a synthetic background. No prebuilt project, live HEX
+Core, or opt-in flag is required. Codeberg runs it on `codeberg-medium` for pushes, pull
+requests, and releases.
+
+## Local Background
 
 Build the local background from the seed project and bundled BONSAI IO files:
 
@@ -44,26 +57,6 @@ JSON. It also reads a record and its exchanges from each database, opens their p
 datapackages, and loads factors from one method. It does not create foreground data or run an
 LCIA calculation. The writable workspace is separate from the read-only source archive.
 
-Run the optional regression check against the prepared project by setting its path:
-
-```bash
-SEE_IMPACTS_TEST_BACKGROUND_DIR="$PWD/data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9" \
-  .venv/bin/python -m pytest tests/test_background_access.py
-```
-
-The optional access test verifies the imported project. A separate optional test attempts a
-foreground calculation against the prepared background:
-
-```bash
-SEE_IMPACTS_TEST_BACKGROUND_DIR="$PWD/data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9" \
-  .venv/bin/python -m pytest tests/test_foreground_calculation.py -k supplied_bonsai
-```
-
-The default suite also exercises concurrent HTTP compute requests against independent temporary
-copies of a synthetic Brightway project, using a HEX Core validation stub. It checks numerical
-results, output validation, cleanup, and that the prepared background is unchanged. This does not
-test a live HEX Core deployment.
-
 To use a non-default location without changing the environment permanently:
 
 ```bash
@@ -71,16 +64,6 @@ BACKGROUND_PROJECT_DIR=/path/to/project \
 BRIGHTWAY_WORKSPACE_DIR=/tmp/see-impacts-brightway \
 .venv/bin/see-impacts-compatibility
 ```
-
-## Unit Tests
-
-```bash
-.venv/bin/python -m pytest
-```
-
-Codeberg runs the same suite on `codeberg-small` for pushes and pull requests. CI builds its
-synthetic Brightway fixture locally; the optional tests requiring a prepared BONSAI project
-remain skipped. The release image build verifies the public-release import.
 
 ## HTTP Service
 

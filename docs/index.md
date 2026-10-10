@@ -25,8 +25,7 @@ Install and inspect the local project:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[dev]'
-.venv/bin/python -m pip install -r requirements-background-build.txt
+.venv/bin/python -m pip install -r requirements-test.txt
 mkdir -p data/background/projects
 tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
 .venv/bin/python -m see_impacts_calculation_service.import_bonsai \

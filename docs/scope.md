@@ -28,13 +28,12 @@ foreground request will calculate. The prepared project is accessed read-only at
 Foreground assembly is available as an internal module. It constructs selected activities,
 product outputs, and exact internal input links from CE-RISE records and identifies the reference
 output. It retains external background inputs and elementary flows for the calculation runner.
-Only a foreground graph with no unresolved boundaries can be materialized into a separate
-writable Brightway database; the HTTP endpoints instead use transient datapackages.
+The HTTP endpoints use transient datapackages rather than writing a foreground database.
 
 An internal calculation path combines the foreground with background and impact-method
 datapackages in memory. It uses exact background activity and biosphere flow identifiers and
-converts compatible units. The synthetic numerical test succeeds, and a direct Brightway
-calculation against the imported BONSAI 3.8-beta2 background has produced a finite score. This
+converts compatible units. The normal test suite builds a fresh BONSAI project and verifies a
+PV request through input validation, calculation, and Integrated LCA output validation. This
 does not guarantee that every foreground request can be solved.
 
 ## Not Provided

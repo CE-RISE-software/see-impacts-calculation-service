@@ -65,7 +65,11 @@ async def main() -> None:
             client.post("/compute", json=request),
             client.post("/compute", json=request),
         )
-        validated_output = validator.calls[-1]["payload"]
+        validated_outputs = [
+            call["payload"]
+            for call in validator.calls
+            if call["model_family"] == "integrated-lca"
+        ]
         invalid_request = {**request, "impact_method": ["missing", "method"]}
         invalid_response = await client.post("/compute", json=invalid_request)
     print(json.dumps({
@@ -78,7 +82,7 @@ async def main() -> None:
         "invalid_compute_status": invalid_response.status_code,
         "invalid_compute_result": invalid_response.json(),
         "validated_families": [call["model_family"] for call in validator.calls],
-        "validated_output": validated_output,
+        "validated_outputs": validated_outputs,
         "remaining_request_projects": sorted(
             path.name for path in (workspace / "requests").iterdir()
         ),

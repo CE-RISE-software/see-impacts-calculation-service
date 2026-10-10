@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import re
 import warnings
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from math import isfinite
 from pathlib import Path
 from typing import Any
@@ -36,10 +38,23 @@ class ForegroundImpact:
     score_unit: str
     bw2data_version: str
     bw2calc_version: str
+    method_version: str | None = None
+    factor_set_reference: str | None = None
+    background_database_version: str | None = None
+    background_source_artifact_uri: str | None = None
+    calculation_timestamp: str | None = None
 
 
 _UNITS = pint.UnitRegistry()
 _BRIGHTWAY_UNIT_ALIASES = {"m3": "meter ** 3"}
+
+
+def _method_version(method: tuple[str, ...], metadata: dict[str, Any]) -> str | None:
+    version = metadata.get("version")
+    if isinstance(version, str) and version.strip():
+        return version
+    match = re.search(r"\bv\d+(?:\.\d+)+(?:\s+\d{4})?$", method[0])
+    return match.group(0) if match else None
 
 
 def _converted_amount(amount: float, source_unit: str, target_unit: str, label: str) -> float:
@@ -237,6 +252,17 @@ def calculate_foreground(
     score_unit = bd.methods[method].get("unit")
     if not isinstance(score_unit, str) or not score_unit:
         raise ForegroundCalculationError(f"Impact method {method!r} has no result unit.")
+    method_metadata = bd.methods[method]
+    database_metadata = bd.databases[background_database_name]
+    factor_set_reference = method_metadata.get("abbreviation")
+    if not isinstance(factor_set_reference, str) or not factor_set_reference:
+        factor_set_reference = None
+    database_version = database_metadata.get("source_version") or database_metadata.get("version")
+    if not isinstance(database_version, str) or not database_version:
+        database_version = None
+    background_source_uri = database_metadata.get("source_url")
+    if not isinstance(background_source_uri, str) or not background_source_uri:
+        background_source_uri = None
     return ForegroundImpact(
         product_system_identifier=assembly.demand.product_system_identifier,
         reference_flow_identifier=assembly.demand.flow_identifier,
@@ -247,4 +273,9 @@ def calculate_foreground(
         score_unit=score_unit,
         bw2data_version=_version_string(getattr(bd, "__version__", "unknown")),
         bw2calc_version=_version_string(getattr(bc, "__version__", "unknown")),
+        method_version=_method_version(method, method_metadata),
+        factor_set_reference=factor_set_reference,
+        background_database_version=database_version,
+        background_source_artifact_uri=background_source_uri,
+        calculation_timestamp=datetime.now(UTC).isoformat(),
     )

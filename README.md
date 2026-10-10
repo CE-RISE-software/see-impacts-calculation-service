@@ -43,9 +43,9 @@ for the internal Brightway calculation.
 Brightway is an implementation detail; there is no separate mapping object or API for callers to
 provide.
 
-Successful results record the configured background project and database identifiers, the
-service version, and the `bw2data` and `bw2calc` versions used for the calculation. The
-background identifiers are not a content checksum or dataset version.
+Successful results record the configured background project, the imported BONSAI version and
+source release, the selected method and factor-set identifier, the calculation time, the
+service version, and the `bw2data` and `bw2calc` versions used for the calculation.
 
 The internal foreground builder assembles selected activities, product outputs, and internal
 input links from those objects. External background inputs and elementary flows are retained for
@@ -53,16 +53,16 @@ the calculation stage. An internal runner links exact background and biosphere i
 converts compatible units, and combines the foreground with Brightway datapackages in memory.
 Each compute request runs in a separate process with a disposable copy of the prepared background
 project; the copy is removed after the response. It does not write to the bundled source data.
-The BONSAI 3.8-beta2 background has produced a finite score in a direct Brightway calculation;
-individual foreground requests still depend on their exact links and functional unit.
+The test suite checks this workflow with a PV Product System and LCI Dataset against the bundled
+BONSAI background and validates the Integrated LCA result against the published data model.
 
 ## Background Access
 
 The compatibility probe verifies that Brightway can open the supplied BONSAI data, read a
 record and its exchanges from each bundled database, open each processed datapackage, and load
 factors from a registered impact method. It does not calculate impacts or validate a foreground
-inventory. See [Local Testing](docs/local-testing.md) for the optional test against the local
-archive.
+inventory. The end-to-end PV test runs as part of the normal suite; see
+[Local Testing](docs/local-testing.md).
 
 ## Use Locally
 
@@ -71,11 +71,12 @@ Create a virtual environment and install the service:
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install -e '.[dev]'
-.venv/bin/python -m pip install -r requirements-background-build.txt
+.venv/bin/python -m pip install -r requirements-test.txt
+.venv/bin/python -m pytest
 ```
 
-Prepare the local Brightway project from the bundled seed and BONSAI IO release:
+To run the HTTP service locally, prepare the Brightway project from the bundled seed and
+BONSAI IO release:
 
 ```bash
 mkdir -p data/background/projects
@@ -85,7 +86,6 @@ tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
   data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
   --project-name cerise_bonsai
 .venv/bin/see-impacts-compatibility
-.venv/bin/python -m pytest
 ```
 
 Start the HTTP service:

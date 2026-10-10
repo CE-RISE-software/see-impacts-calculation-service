@@ -33,6 +33,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8,<9",
+  "jsonschema>=4.23,<5",
+  "packaging>=24,<27",
 ]
 
 [project.scripts]

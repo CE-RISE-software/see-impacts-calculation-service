@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from math import isfinite
 from typing import Any
@@ -291,44 +290,3 @@ def assemble_foreground(
         reference_output=reference_candidates[0].key,
         demand=demand,
     )
-
-
-def materialize_foreground(assembly: ForegroundAssembly, database: Any) -> None:
-    """Write a fully resolved foreground graph into a caller-owned Brightway database."""
-
-    if assembly.external_inputs or assembly.external_treatments or assembly.elementary_flows:
-        raise ForegroundConstructionError(
-            "External and elementary flows require background/biosphere linking in the calculation stage."
-        )
-    if database.registered:
-        raise ForegroundConstructionError(f"Foreground database {database.name!r} already exists.")
-
-    database.register()
-    activity_nodes = {}
-    for activity in assembly.activities:
-        properties = {"location": activity.location} if activity.location else {}
-        node = database.new_node(
-            code="activity:" + json.dumps(activity.key, separators=(",", ":")),
-            name=activity.name,
-            type="process",
-            **properties,
-        )
-        node.save()
-        activity_nodes[activity.key] = node
-    output_nodes = {}
-    for output in assembly.outputs:
-        node = database.new_node(
-            code="flow:" + json.dumps(output.key, separators=(",", ":")),
-            name=output.object_reference or output.key[1],
-            type="product",
-            unit=output.unit,
-        )
-        node.save()
-        activity_nodes[output.producer].new_edge(
-            input=node, amount=output.amount, type="production"
-        ).save()
-        output_nodes[output.key] = node
-    for flow in assembly.inputs:
-        activity_nodes[flow.consumer].new_edge(
-            input=output_nodes[flow.provider_output], amount=flow.amount, type="technosphere"
-        ).save()

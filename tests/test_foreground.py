@@ -1,10 +1,3 @@
-import copy
-import json
-import os
-import subprocess
-import sys
-from pathlib import Path
-
 import pytest
 
 from see_impacts_calculation_service.foreground import (
@@ -213,44 +206,3 @@ def test_rejects_nonpositive_functional_unit():
         assemble_foreground(
             system, [dataset], reference_flow_identifier="finished-output", quantity=0, unit="kg"
         )
-
-
-def test_materialization_requires_resolved_boundaries():
-    system, dataset = example()
-    assembly = build(system, dataset)
-
-    class UnregisteredDatabase:
-        registered = False
-
-    from see_impacts_calculation_service.foreground import materialize_foreground
-
-    with pytest.raises(ForegroundConstructionError, match="External and elementary"):
-        materialize_foreground(assembly, UnregisteredDatabase())
-
-
-def test_materializes_foreground_only_graph_in_isolated_brightway_project(tmp_path):
-    fixture = Path(__file__).parent / "fixtures" / "foreground_smoke.py"
-    system, dataset = example()
-    dataset = copy.deepcopy(dataset)
-    dataset["flows"] = [
-        item for item in dataset["flows"]
-        if item["flow_identifier"] not in {"electricity-input", "co2-output"}
-    ]
-    payload = json.dumps({"product_system": system, "lci_datasets": [dataset]})
-    workspace = tmp_path / "brightway"
-    workspace.mkdir()
-    env = {**os.environ, "BRIGHTWAY2_DIR": str(workspace)}
-    env["PYTHONPATH"] = str(Path(__file__).parents[1] / "src")
-    result = subprocess.run(
-        [sys.executable, str(fixture), payload],
-        env=env, check=True, capture_output=True, text=True,
-    )
-    report = json.loads(result.stdout.rsplit("\n", 2)[-2])
-    assert report == {
-        "activity_count": 2,
-        "product_count": 2,
-        "production_edges": 2,
-        "input_edges": 1,
-        "input_target": "material",
-        "input_amount": 1.0,
-    }

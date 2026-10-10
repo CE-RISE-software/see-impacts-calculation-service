@@ -2,7 +2,6 @@ import json
 import os
 import subprocess
 import sys
-from math import isfinite
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -11,12 +10,22 @@ import pytest
 from see_impacts_calculation_service.foreground_calculation import (
     ForegroundCalculationError,
     _converted_amount,
+    _method_version,
     _required_database_names,
 )
 
 
 def test_converts_cubic_meter_to_brightway_m3_unit():
     assert _converted_amount(2.0, "m^3", "m3", "water") == 2.0
+
+
+def test_method_version_uses_metadata_or_explicit_registered_label():
+    assert _method_version(("EF v3.1", "climate change"), {}) == "v3.1"
+    assert _method_version(("CML v4.8 2016", "climate change"), {}) == "v4.8 2016"
+    assert _method_version(("example", "climate change"), {}) is None
+    assert _method_version(
+        ("EF v3.1", "climate change"), {"version": "release-2"}
+    ) == "release-2"
 
 
 def test_selects_background_dependencies_but_not_unrelated_databases():
@@ -158,22 +167,3 @@ def test_singular_diagnostic_identifies_reachable_and_separate_activities(tmp_pa
         (frozenset({"reachable-a", "reachable-b"}), True),
         (frozenset({"separate-a", "separate-b"}), False),
     }
-
-
-def test_supplied_bonsai_foreground_run_produces_score(tmp_path):
-    source = os.environ.get("SEE_IMPACTS_TEST_BACKGROUND_DIR")
-    if not source:
-        pytest.skip("Set SEE_IMPACTS_TEST_BACKGROUND_DIR to test the supplied background")
-    fixture = Path(__file__).parent / "fixtures" / "bonsai_foreground_smoke.py"
-    env = {**os.environ, "PYTHONPATH": str(Path(__file__).parents[1] / "src")}
-    env.pop("BRIGHTWAY2_DIR", None)
-    result = subprocess.run(
-        [sys.executable, str(fixture), source, str(tmp_path / "workspace")],
-        env=env, capture_output=True, text=True,
-    )
-
-    assert result.returncode == 0, result.stderr
-    report = json.loads(result.stdout.strip().splitlines()[-1])
-    assert report["status"] == "calculable"
-    assert isfinite(report["impact"]["score"])
-    assert report["impact"]["score_unit"]

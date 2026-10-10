@@ -44,24 +44,45 @@ def build_integrated_lca_result(
         }
         for dataset in selected_datasets
     )
-    input_references.append(
-        {
-            "input_role": "BACKGROUND_INVENTORY",
-            "source_model_identifier": "brightway-project",
-            "source_record_identifier": background_project_name,
-        }
-    )
+    background_reference = {
+        "input_role": "BACKGROUND_INVENTORY",
+        "source_model_identifier": "brightway-project",
+        "source_record_identifier": background_project_name,
+    }
+    if impact.background_source_artifact_uri:
+        background_reference["source_artifact_uri"] = impact.background_source_artifact_uri
+    input_references.append(background_reference)
     method_name = " / ".join(impact.method)
+    database_info = {"background_database": background_database_name}
+    if impact.background_database_version:
+        database_info["database_version"] = impact.background_database_version
+    software_info = {
+        "software_name": "see-impacts-calculation-service",
+        "software_version": software_version,
+    }
+    if impact.calculation_timestamp:
+        software_info["calculation_timestamp"] = impact.calculation_timestamp
+    indicator = {
+        "assessment_dimension": "ENVIRONMENTAL",
+        "indicator_identifier": method_name,
+        "indicator_name": impact.method[-1],
+        "assessment_method": method_name,
+        "indicator_result": {
+            "numeric_value": impact.score,
+            "unit": impact.score_unit,
+        },
+    }
+    if impact.method_version:
+        indicator["method_version"] = impact.method_version
+    if impact.factor_set_reference:
+        indicator["calculation_model_or_factor_set_reference"] = impact.factor_set_reference
     return {
         "lca_analysis_instances": [
             {
                 "study_metadata": {
                     "assessment_dimensions": ["ENVIRONMENTAL"],
-                    "database_info": {"background_database": background_database_name},
-                    "software_info": {
-                        "software_name": "see-impacts-calculation-service",
-                        "software_version": software_version,
-                    },
+                    "database_info": database_info,
+                    "software_info": software_info,
                     "assessment_toolchain": {
                         "tool_executions": [
                             {
@@ -88,18 +109,7 @@ def build_integrated_lca_result(
                 },
                 "assessment_inputs": {"input_references": input_references},
                 "assessment_results": {
-                    "assessment_indicators": [
-                        {
-                            "assessment_dimension": "ENVIRONMENTAL",
-                            "indicator_identifier": method_name,
-                            "indicator_name": impact.method[-1],
-                            "assessment_method": method_name,
-                            "indicator_result": {
-                                "numeric_value": impact.score,
-                                "unit": impact.score_unit,
-                            },
-                        }
-                    ]
+                    "assessment_indicators": [indicator]
                 },
             }
         ]

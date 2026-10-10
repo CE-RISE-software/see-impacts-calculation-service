@@ -190,10 +190,11 @@ with the functional unit, input references, and one environmental indicator:
   "lca_analysis_instances": [{
     "study_metadata": {
       "assessment_dimensions": ["ENVIRONMENTAL"],
-      "database_info": {"background_database": "bonsai"},
+      "database_info": {"background_database": "bonsai", "database_version": "3.8-beta2 (bw)"},
       "software_info": {
         "software_name": "see-impacts-calculation-service",
-        "software_version": "0.0.1"
+        "software_version": "0.0.1",
+        "calculation_timestamp": "2026-10-10T12:00:00+00:00"
       },
       "assessment_toolchain": {
         "tool_executions": [
@@ -211,7 +212,7 @@ with the functional unit, input references, and one environmental indicator:
       "input_references": [
         {"input_role": "PRODUCT_SYSTEM", "source_model_identifier": "product-system", "source_model_version": "0.2.0", "source_record_identifier": "system-1"},
         {"input_role": "FOREGROUND_INVENTORY", "source_model_identifier": "lci-dataset", "source_model_version": "0.2.0", "source_record_identifier": "dataset-1", "source_record_version": "1"},
-        {"input_role": "BACKGROUND_INVENTORY", "source_model_identifier": "brightway-project", "source_record_identifier": "cerise_bonsai"}
+        {"input_role": "BACKGROUND_INVENTORY", "source_model_identifier": "brightway-project", "source_record_identifier": "cerise_bonsai", "source_artifact_uri": "https://doi.org/10.5281/zenodo.15421526"}
       ]
     },
     "assessment_results": {
@@ -220,6 +221,8 @@ with the functional unit, input references, and one environmental indicator:
         "indicator_identifier": "CML v4.8 2016 / climate change / global warming potential (GWP100)",
         "indicator_name": "global warming potential (GWP100)",
         "assessment_method": "CML v4.8 2016 / climate change / global warming potential (GWP100)",
+        "method_version": "v4.8 2016",
+        "calculation_model_or_factor_set_reference": "cml-v48-2016cg.231d6e8f8b1c199a47182515eba4032e",
         "indicator_result": {"numeric_value": 12.5, "unit": "kg CO2-Eq"}
       }]
     }
@@ -227,19 +230,20 @@ with the functional unit, input references, and one environmental indicator:
 }
 ```
 
-The method identifier is registered in the supplied project, but the score and input objects
-are illustrative and do not represent a verified BONSAI result. The project identifier records
-which configured background was used; it is not a content checksum or dataset version. The
-toolchain versions come from the Brightway runtime used for the calculation. The
-endpoint does not persist foreground records or modify the prepared background. It validates
+The score, timestamp, and input objects above are illustrative. The method name and version
+come from the registered method metadata or an explicit version in its name. The factor-set
+reference is the registered Brightway method abbreviation, local to the identified project;
+it is not a citation for the method's source publication. The database version and source
+release URI come from the prepared background's metadata. The URI identifies the BONSAI source
+release, not the generated Brightway project. Fields without a documented value are omitted.
+The project identifier is not a content checksum. Toolchain versions come from the Brightway
+runtime. The endpoint does not persist foreground records or modify the prepared background. It validates
 each input model, resolves the reference flow and foreground links, runs the calculation in a
 disposable per-request Brightway project, and validates the output model.
 
-Apart from the requested impact-method identifier, the schema has no Brightway-specific
-fields. Product System and LCI Dataset objects are the
-inputs; an Integrated LCA object is the calculation result. The semantic content of the
-input objects is used internally to build the Brightway calculation. There is no additional
-mapping object to submit or save.
+Product System and LCI Dataset objects are the inputs; an Integrated LCA object is the
+calculation result. The semantic content of the input objects is used internally to build
+the Brightway calculation. There is no additional mapping object to submit or save.
 
 ### Validation Errors
 

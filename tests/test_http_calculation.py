@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 
@@ -45,7 +46,14 @@ def test_compute_http_with_real_synthetic_brightway_project(tmp_path):
     }
     assert report["compute_status"] == 200
     assert report["second_compute_status"] == 200
-    assert report["result"] == report["validated_output"]
+    assert len(report["validated_outputs"]) == 2
+    assert report["result"] in report["validated_outputs"]
+    assert report["second_result"] in report["validated_outputs"]
+    first = report["result"]["lca_analysis_instances"][0]
+    second = report["second_result"]["lca_analysis_instances"][0]
+    for instance in (first, second):
+        timestamp = instance["study_metadata"]["software_info"].pop("calculation_timestamp")
+        assert datetime.fromisoformat(timestamp).tzinfo is not None
     assert report["second_result"] == report["result"]
     assert report["invalid_compute_status"] == 422
     assert report["invalid_compute_result"]["detail"]["code"] == "CALCULATION_PRECONDITION_FAILED"

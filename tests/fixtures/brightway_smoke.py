@@ -1,4 +1,4 @@
-"""Create and calculate a tiny Brightway project in separate processes."""
+"""Create a tiny Brightway project for isolated tests."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ import json
 import os
 import shutil
 import sys
-from dataclasses import asdict
 from pathlib import Path
 
 
@@ -51,30 +50,11 @@ def build(builder_dir: Path, source_dir: Path, *, singular: bool = False) -> Non
     (source_dir / ".project-name.json").write_text(
         json.dumps({"name": "synthetic"}), encoding="utf-8"
     )
-
-
-def calculate(source_dir: Path, workspace_dir: Path) -> None:
-    from see_impacts_calculation_service.brightway_runner import calculate_background_activity
-
-    result = calculate_background_activity(
-        project_dir=source_dir,
-        workspace_dir=workspace_dir,
-        project_name="synthetic",
-        database_name="background",
-        activity_code="activity-1",
-        demand_amount=2.0,
-        method=("synthetic", "climate"),
-    )
-    print(json.dumps(asdict(result)))
-
-
 if __name__ == "__main__":
     command = sys.argv[1]
     if command == "build":
         build(Path(sys.argv[2]), Path(sys.argv[3]))
     elif command == "build-singular":
         build(Path(sys.argv[2]), Path(sys.argv[3]), singular=True)
-    elif command == "calculate":
-        calculate(Path(sys.argv[2]), Path(sys.argv[3]))
     else:
         raise ValueError(f"Unknown command: {command}")

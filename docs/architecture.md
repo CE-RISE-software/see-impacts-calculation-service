@@ -7,7 +7,6 @@ The service is a containerized Python HTTP application with these active compone
 - `app.py` exposes health, capability, compute, diagnostic, OpenAPI, and API-documentation endpoints;
 - `compatibility.py` opens the supplied Brightway project and reports its databases and methods;
 - `import_bonsai.py` verifies and imports the pinned BONSAI IO release during image preparation;
-- `brightway_runner.py` runs a single internal Brightway 2.5 LCIA and rejects non-finite scores;
 - `config.py` reads HTTP, background-project, and Brightway-workspace settings;
 - `hex_core.py` calls HEX Core for input and output model schema availability and validation;
 - `model_validation.py` rejects failed or incomplete model validation reports;
@@ -42,9 +41,8 @@ immutable. Do not use the background source directory as the Brightway workspace
 `lci-dataset`, and `integrated-lca`, and requires a functional unit and impact method. It
 verifies that HEX Core has JSON Schemas for the requested versions, validates the Product
 System and each LCI Dataset, assembles the foreground, and runs an in-memory calculation.
-On success it builds an Integrated LCA object, records the configured background project,
-service version, and actual `bw2data` and `bw2calc` versions, validates the object through
-HEX Core, and returns it.
+On success it builds an Integrated LCA object, records the method, background and software
+provenance available from the calculation, validates the object through HEX Core, and returns it.
 Model or reference failures return `422`; missing schemas or unavailable HEX Core return
 `503`; invalid generated output returns `500` without publishing the object. Singular
 calculations return a structured diagnostic rather than a score.
@@ -53,10 +51,9 @@ The semantic content of the input objects is the basis for building the internal
 calculation. Foreground assembly resolves selected activities, product outputs, internal inputs,
 and the reference output using model identifiers. It does not guess a provider from a matching
 unit alone. External background demands and elementary flows remain explicit in the assembled
-graph; materialization into a caller-owned writable Brightway database is available only when
-those boundaries are absent. The prepared BONSAI project is not modified by foreground
-construction. Brightway state is internal to the service; no additional mapping model, API
-resource, or persisted record is part of the service boundary.
+graph. The prepared BONSAI project is not modified by foreground construction. Brightway state
+is internal to the service; no additional mapping model, API resource, or persisted record is
+part of the service boundary.
 
 For calculation, the foreground runner adds a transient Brightway datapackage to the read-only
 background and method datapackages. External activity and biosphere flow references must resolve
