@@ -34,7 +34,7 @@
     "Digital Product Passport",
     "Digital Material Passport"
   ],
-  "notes": "Provides HTTP calculation and diagnostic endpoints, impact-method discovery, and Brightway background-project compatibility checks.",
+  "notes": "Software source is licensed EUPL-1.2. Bundled BONSAI background files are licensed CC BY-SA 4.0 and originate from https://doi.org/10.5281/zenodo.15421526.",
   "communities": [
     { "identifier": "ce-rise" },
     { "identifier": "impact" }
