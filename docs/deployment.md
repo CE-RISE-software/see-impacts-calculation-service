@@ -80,10 +80,12 @@ Concurrent compute requests have separate Brightway processes and request worksp
 
 ```bash
 podman run --rm -p 8080:8080 \
+  -e HEX_CORE_BASE_URL=http://hex-core-host:8080 \
   see-impacts-calculation-service:local
 ```
 
-Set `HEX_CORE_BASE_URL` to a reachable HEX Core instance before calling `POST /compute`.
+Replace the example HEX Core address with one reachable **from inside the container** before
+calling `POST /compute`. The default `127.0.0.1` would refer to the container itself.
 `BACKGROUND_PROJECT_DIR` can still select another approved project when needed.
 
 After startup, verify both liveness and project readiness:

@@ -2,7 +2,7 @@
 
 - [Introduction](index.md)
 - [Architecture](architecture.md)
-- [API Overview](api-overview.md)
+- [Compute Workflow](api-overview.md)
 - [API Reference](api-reference.md)
 - [Deployment](deployment.md)
 - [Local Testing](local-testing.md)

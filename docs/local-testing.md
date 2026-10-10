@@ -67,10 +67,12 @@ BRIGHTWAY_WORKSPACE_DIR=/tmp/see-impacts-brightway \
 
 ## HTTP Service
 
-Start the service from the repository root:
+Start the service from the repository root. Replace the example HEX Core address with one
+reachable from this machine before sending compute requests:
 
 ```bash
-.venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
+HEX_CORE_BASE_URL=http://hex-core-host:8080 \
+  .venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
 ```
 
 In a second terminal, check the live service and background project:
@@ -83,10 +85,11 @@ curl -sS http://127.0.0.1:8080/openapi.json
 ```
 
 `POST /compute` requires a reachable HEX Core with the requested Product System, LCI Dataset,
-and Integrated LCA schemas. It validates both input models, calculates the requested method,
-and validates the generated output. Invalid inputs or unresolved links return `422`; a singular
-technosphere returns a `not_calculable` diagnostic without a score. Use `GET /capabilities` to
-check that the background project opens, not to establish that a specific request is solvable.
+and Integrated LCA schemas. It validates the inputs, calculates the requested method, and
+validates the generated output. Use the [PV request](api-overview.md#send-a-request) to exercise
+this path. Invalid inputs or unresolved links return `422`; a singular technosphere returns a
+`not_calculable` diagnostic without a score. `GET /capabilities` checks that the background
+project opens, not whether a particular request can be calculated.
 
 ## Container Smoke Test
 

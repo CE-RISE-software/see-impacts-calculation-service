@@ -1,77 +1,43 @@
 # CE-RISE SEE Impacts Calculation Service
 
-This site documents the CE-RISE SEE impacts calculation service. SEE stands for socio-economic
-and environmental impacts.
+This service calculates environmental impact indicators from CE-RISE Product System and LCI
+Dataset records. It uses a configured Brightway background and returns a validated Integrated
+LCA result. SEE stands for socio-economic and environmental impacts; the current calculation
+endpoint covers the environmental dimension.
 
 The [CE-RISE Solution portal](https://solution.ce-rise.eu/) is the main entry point for human
 users exploring the wider solution and its components.
 
-## Available Service Functions
+## Request and Result
 
-The service provides Brightway project compatibility checks and an HTTP service boundary:
+One `POST /compute` request contains:
 
-- `GET /health` reports the service identity and configuration;
-- `GET /capabilities` opens the configured Brightway project and reports databases and methods;
-- `GET /methods` lists the identifiers accepted by the compute endpoints;
-- `POST /compute` calculates and validates one Integrated LCA environmental result;
-- `POST /compute/diagnostics` reports request-specific calculation feasibility;
-- `GET /openapi.json` and `GET /docs` provide the machine-readable and interactive API;
-- `see-impacts-compatibility` runs the same Brightway project check from the command line;
-- the container image runs the same HTTP service with the bundled BONSAI background project.
+1. `model_versions` for Product System, LCI Dataset, and Integrated LCA validation in HEX Core;
+2. one `product_system` record selecting the foreground activities and reference flow;
+3. the referenced `lci_datasets` with activities and inventory flows;
+4. a `functional_unit` naming that reference flow, its unit, and the requested quantity;
+5. one `impact_method` identifier selected from `GET /methods`.
 
-## Use the Service
+The service validates the records, resolves foreground and background links, calculates one
+indicator, and validates the generated Integrated LCA object. A successful response includes
+the score and unit, functional unit, input references, selected method, and available data and
+software provenance. A singular calculation returns a `not_calculable` diagnostic instead of a
+score. Nonconforming records or unresolved links return `422`.
 
-Install and inspect the local project:
+The [Compute Workflow](api-overview.md) explains the record relationships and gives a runnable
+PV request using the bundled BONSAI background. The [API Reference](api-reference.md) defines
+the endpoint responses and errors.
 
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-test.txt
-mkdir -p data/background/projects
-tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
-.venv/bin/python -m see_impacts_calculation_service.import_bonsai \
-  data/background/bonsai-3.8-beta2 \
-  data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
-  --project-name cerise_bonsai
-.venv/bin/see-impacts-compatibility
-```
+## Start Using It
 
-Start the HTTP service:
+Prepare the background and start the service from source using [Local Testing](local-testing.md),
+or follow [Deployment](deployment.md) for the image. Configure a reachable HEX Core with the
+requested model versions, then inspect `GET /capabilities` and choose a method from
+`GET /methods`. Send the five-field JSON request to `POST /compute`.
 
-```bash
-.venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
-```
-
-In another terminal:
-
-```bash
-curl -sS http://127.0.0.1:8080/health
-curl -sS http://127.0.0.1:8080/capabilities
-```
-
-`POST /compute` validates input models through HEX Core, calculates an environmental indicator,
-and validates the Integrated LCA result before returning it. It returns `422` for invalid
-inputs or unresolved links, `503` when required schemas or validation are unavailable, and a
-structured `not_calculable` response when the technosphere is singular.
-
-The [compatibility probe](local-testing.md) verifies read access to the supplied background
-data. It does not establish that every foreground request will be solvable.
-
-## Documentation Structure
-
-- [Architecture](architecture.md): active service components and data handling
-- [API Overview](api-overview.md): available endpoints and compute request schema
-- [API Reference](api-reference.md): endpoint-level request, response, and error behavior
-- [Deployment](deployment.md): container image, configuration, and background provisioning
-- [Local Testing](local-testing.md): probe, test, and local container workflows
-- [HEX Core Status](integration.md): available configuration and client boundary
-- [Project Scope](scope.md): available service scope and exclusions
-
----
-
-
-
-
----
+The [HEX Core integration](integration.md) page covers the validation dependency.
+[Architecture](architecture.md) describes the internal calculation, and
+[Project Scope](scope.md) lists the current boundaries.
 
 Funded by the European Union under Grant Agreement No. 101092281 — CE-RISE.  
 Views and opinions expressed are those of the author(s) only and do not necessarily reflect those of the European Union or the granting authority (HADEA).

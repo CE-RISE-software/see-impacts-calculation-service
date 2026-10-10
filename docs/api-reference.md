@@ -21,7 +21,7 @@ Example response:
   "status": "ok",
   "service": "see-impacts-calculation-service",
   "version": "0.0.1",
-  "hex_core_base_url": "http://127.0.0.1:8080",
+  "hex_core_base_url": "http://hex-core-host:8080",
   "background_project_dir": "/app/data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9"
 }
 ```
@@ -32,40 +32,10 @@ Opens the configured Brightway background project and reports the databases and 
 that are available to the service. Use this endpoint as a readiness check after provisioning or
 updating background data.
 
-Example response shape:
-
-```json
-{
-  "calculation_status": "request_dependent",
-  "background": {
-    "project_name": "cerise_bonsai",
-    "databases": [
-      {
-        "name": "bonsai",
-        "backend": "iotable",
-        "format": "EXIOBASE 3",
-        "activity_count": 34567
-      }
-    ],
-    "method_count": 668,
-    "method_examples": [
-      ["CML v4.8 2016", "acidification", "acidification (incl. fate, average Europe total, A&B)"],
-      ["CML v4.8 2016", "climate change", "global warming potential (GWP100)"],
-      ["CML v4.8 2016", "ecotoxicity: freshwater", "freshwater aquatic ecotoxicity (FAETP inf)"],
-      ["CML v4.8 2016", "ecotoxicity: marine", "marine aquatic ecotoxicity (MAETP inf)"],
-      ["CML v4.8 2016", "ecotoxicity: terrestrial", "terrestrial ecotoxicity (TETP inf)"]
-    ]
-  },
-  "brightway": {
-    "bw2data_version": "4.7",
-    "bw2calc_version": "2.5.0"
-  }
-}
-```
-
-The database names, counts, and method examples are determined by the configured project. The
-example values reflect the approved local project used for this service and are not a fixed API
-guarantee. Listing methods does not prove that an LCIA will produce a finite score.
+The response contains `calculation_status: "request_dependent"`, a `background` object with the
+project name, databases, method count, and sample method identifiers, and a `brightway` object
+with the `bw2data` and `bw2calc` versions. Database names and counts depend on the configured
+project. This check does not establish that a particular request can be calculated.
 
 ## `GET /methods`
 
@@ -73,19 +43,10 @@ Returns the full sorted set of impact-method identifiers registered in the confi
 Brightway project. Pass one `methods` entry unchanged as `impact_method` in a compute request.
 This is method discovery, not a guarantee that a particular request can be solved.
 
-```json
-{
-  "project_name": "cerise_bonsai",
-  "method_count": 668,
-  "methods": [
-    ["CML v4.8 2016", "acidification", "acidification (incl. fate, average Europe total, A&B)"],
-    ["CML v4.8 2016", "climate change", "global warming potential (GWP100)"]
-  ]
-}
-```
-
-The list above is abbreviated; the actual response contains all registered methods. An
-unavailable project returns `503 BRIGHTWAY_PROJECT_UNAVAILABLE`.
+The response contains `project_name`, `method_count`, and `methods`. Each entry in `methods`
+is an array of strings. The PV example uses the registered identifier
+`["EF v3.1", "climate change", "global warming potential (GWP100)"]`.
+An unavailable project returns `503 BRIGHTWAY_PROJECT_UNAVAILABLE`.
 
 If the project cannot be opened, the endpoint returns `503`:
 
@@ -104,146 +65,84 @@ This endpoint validates input models through HEX Core, assembles a foreground, c
 environmental indicator, then validates and returns an Integrated LCA object. Its calculation
 depends on the configured background data, requested method, and resolvable inputs.
 
-### Request Schema
+### Required Request Fields
 
-- `model_versions`
-  - type: object
-  - required: yes
-  - `product_system`: version of the Product System input model
-  - `lci_dataset`: version of the LCI Dataset input model
-  - `integrated_lca`: version of the Integrated LCA result model
-- `product_system`
-  - type: object
-  - required: yes
-  - meaning: Product System input object following the selected model version
-- `lci_datasets`
-  - type: array of objects
-  - required: yes; at least one object
-  - meaning: LCI Dataset input objects following the selected model version
-- `functional_unit`
-  - type: object
-  - required: yes
-  - `reference_flow_identifier`: identifier of the Product System reference flow
-  - `quantity`: positive finite requested quantity
-  - `unit`: unit matching the Product System reference-flow unit
-- `impact_method`
-  - type: array of strings
-  - required: yes; at least one component
-  - meaning: registered Brightway impact-method identifier
+| Field | Type and rule |
+| --- | --- |
+| `model_versions` | Object with `product_system`, `lci_dataset`, and `integrated_lca` version strings available in HEX Core. |
+| `product_system` | One Product System object conforming to the selected version. |
+| `lci_datasets` | Non-empty array of LCI Dataset objects conforming to the selected version. |
+| `functional_unit` | Object with the Product System's `reference_flow_identifier`, a positive finite `quantity`, and its declared `unit`. |
+| `impact_method` | Non-empty array of strings exactly matching a registered method returned by `GET /methods`. |
 
-### Request
-
-```json
-{
-  "model_versions": {
-    "product_system": "<product-system-version>",
-    "lci_dataset": "<lci-dataset-version>",
-    "integrated_lca": "<integrated-lca-version>"
-  },
-  "product_system": {
-    "product_system_identifier": "system-1",
-    "lci_dataset_references": [{
-      "lci_dataset_reference_identifier": "dataset-ref-1",
-      "lci_dataset_identifier": "dataset-1",
-      "lci_dataset_version": "1"
-    }],
-    "activity_references": [{
-      "lci_dataset_reference_identifier": "dataset-ref-1",
-      "activity_identifier": "activity-1"
-    }],
-    "reference_flow_specification": {
-      "reference_flow_lci_dataset_reference_identifier": "dataset-ref-1",
-      "reference_flow_identifier": "flow-1",
-      "reference_flow_numerical_value": 2.0,
-      "reference_flow_unit_reference": "kg"
-    }
-  },
-  "lci_datasets": [{
-    "lci_dataset_identifier": "dataset-1",
-    "lci_dataset_version": "1",
-    "activities": [{"activity_identifier": "activity-1"}],
-    "flows": [{
-      "flow_identifier": "flow-1",
-      "flow_kind": "PRODUCT_FLOW",
-      "output_of_activity_reference": "activity-1",
-      "flow_numerical_value": 2.0,
-      "flow_unit_reference": "kg"
-    }]
-  }],
-  "functional_unit": {
-    "reference_flow_identifier": "flow-1",
-    "quantity": 4.0,
-    "unit": "kg"
-  },
-  "impact_method": ["CML v4.8 2016", "climate change", "global warming potential (GWP100)"]
-}
-```
+The [Compute Workflow](api-overview.md#required-inputs) explains the required links between
+the CE-RISE records. Its [PV example](api-overview.md#send-a-request) builds and sends a
+complete request from the committed fixtures.
 
 ### Response
 
-A successful request returns an Integrated LCA object after HEX Core has validated it against
-the requested `model_versions.integrated_lca` schema. The result contains one analysis instance
-with the functional unit, input references, and one environmental indicator:
+A successful request returns an Integrated LCA object after HEX Core validates it against the
+requested `model_versions.integrated_lca` schema. This example follows the PV request in the
+Compute Workflow. The timestamp is illustrative, and the score is rounded from the tested PV
+result:
 
 ```json
 {
-  "lca_analysis_instances": [{
-    "study_metadata": {
-      "assessment_dimensions": ["ENVIRONMENTAL"],
-      "database_info": {"background_database": "bonsai", "database_version": "3.8-beta2 (bw)"},
-      "software_info": {
-        "software_name": "see-impacts-calculation-service",
-        "software_version": "0.0.1",
-        "calculation_timestamp": "2026-10-10T12:00:00+00:00"
+  "lca_analysis_instances": [
+    {
+      "study_metadata": {
+        "assessment_dimensions": ["ENVIRONMENTAL"],
+        "database_info": {
+          "background_database": "bonsai",
+          "database_version": "3.8-beta2 (bw)"
+        },
+        "software_info": {
+          "software_name": "see-impacts-calculation-service",
+          "software_version": "0.0.1",
+          "calculation_timestamp": "2026-10-10T12:00:00+00:00"
+        },
+        "assessment_toolchain": {
+          "tool_executions": [
+            {"execution_order": 1, "tool_identifier": "bw2data", "tool_name": "Brightway bw2data", "tool_roles": ["DATA_EXTRACTION"], "tool_version": "4.7"},
+            {"execution_order": 2, "tool_identifier": "bw2calc", "tool_name": "Brightway bw2calc", "tool_roles": ["INVENTORY_CALCULATION", "IMPACT_ASSESSMENT"], "tool_version": "2.5.0"}
+          ]
+        },
+        "functional_unit_specification": {
+          "reference_flow_identifier": "PVPanelManufacturingCNAct_flow0_PhotovoltaicPanelSingleSi",
+          "functional_unit_quantity": 1.0,
+          "functional_unit_unit": "m^2"
+        }
       },
-      "assessment_toolchain": {
-        "tool_executions": [
-          {"execution_order": 1, "tool_identifier": "bw2data", "tool_name": "Brightway bw2data", "tool_roles": ["DATA_EXTRACTION"], "tool_version": "4.7"},
-          {"execution_order": 2, "tool_identifier": "bw2calc", "tool_name": "Brightway bw2calc", "tool_roles": ["INVENTORY_CALCULATION", "IMPACT_ASSESSMENT"], "tool_version": "2.5.0"}
+      "assessment_inputs": {
+        "input_references": [
+          {"input_role": "PRODUCT_SYSTEM", "source_model_identifier": "product-system", "source_model_version": "0.0.1", "source_record_identifier": "pv-panel"},
+          {"input_role": "FOREGROUND_INVENTORY", "source_model_identifier": "lci-dataset", "source_model_version": "0.0.1", "source_record_identifier": "pv-panel-inventory", "source_record_version": "1"},
+          {"input_role": "BACKGROUND_INVENTORY", "source_model_identifier": "brightway-project", "source_record_identifier": "cerise_bonsai", "source_artifact_uri": "https://doi.org/10.5281/zenodo.15421526"}
         ]
       },
-      "functional_unit_specification": {
-        "reference_flow_identifier": "flow-1",
-        "functional_unit_quantity": 4.0,
-        "functional_unit_unit": "kg"
+      "assessment_results": {
+        "assessment_indicators": [
+          {
+            "assessment_dimension": "ENVIRONMENTAL",
+            "indicator_identifier": "EF v3.1 / climate change / global warming potential (GWP100)",
+            "indicator_name": "global warming potential (GWP100)",
+            "assessment_method": "EF v3.1 / climate change / global warming potential (GWP100)",
+            "indicator_result": {"numeric_value": 109.927731, "unit": "kg CO2-Eq"},
+            "method_version": "v3.1",
+            "calculation_model_or_factor_set_reference": "ef-v31cg.1c397559135d78f19a1915a0ca4f626a"
+          }
+        ]
       }
-    },
-    "assessment_inputs": {
-      "input_references": [
-        {"input_role": "PRODUCT_SYSTEM", "source_model_identifier": "product-system", "source_model_version": "0.2.0", "source_record_identifier": "system-1"},
-        {"input_role": "FOREGROUND_INVENTORY", "source_model_identifier": "lci-dataset", "source_model_version": "0.2.0", "source_record_identifier": "dataset-1", "source_record_version": "1"},
-        {"input_role": "BACKGROUND_INVENTORY", "source_model_identifier": "brightway-project", "source_record_identifier": "cerise_bonsai", "source_artifact_uri": "https://doi.org/10.5281/zenodo.15421526"}
-      ]
-    },
-    "assessment_results": {
-      "assessment_indicators": [{
-        "assessment_dimension": "ENVIRONMENTAL",
-        "indicator_identifier": "CML v4.8 2016 / climate change / global warming potential (GWP100)",
-        "indicator_name": "global warming potential (GWP100)",
-        "assessment_method": "CML v4.8 2016 / climate change / global warming potential (GWP100)",
-        "method_version": "v4.8 2016",
-        "calculation_model_or_factor_set_reference": "cml-v48-2016cg.231d6e8f8b1c199a47182515eba4032e",
-        "indicator_result": {"numeric_value": 12.5, "unit": "kg CO2-Eq"}
-      }]
     }
-  }]
+  ]
 }
 ```
 
-The score, timestamp, and input objects above are illustrative. The method name and version
-come from the registered method metadata or an explicit version in its name. The factor-set
-reference is the registered Brightway method abbreviation, local to the identified project;
-it is not a citation for the method's source publication. The database version and source
-release URI come from the prepared background's metadata. The URI identifies the BONSAI source
-release, not the generated Brightway project. Fields without a documented value are omitted.
-The project identifier is not a content checksum. Toolchain versions come from the Brightway
-runtime. The endpoint does not persist foreground records or modify the prepared background. It validates
-each input model, resolves the reference flow and foreground links, runs the calculation in a
-disposable per-request Brightway project, and validates the output model.
-
-Product System and LCI Dataset objects are the inputs; an Integrated LCA object is the
-calculation result. The semantic content of the input objects is used internally to build
-the Brightway calculation. There is no additional mapping object to submit or save.
+The method version comes from registered metadata or an explicit version in the method name.
+The factor-set reference is Brightway's identifier within the project, not a citation for the
+method's source publication. The DOI identifies the BONSAI source release, not the generated
+Brightway project. Fields without a documented value are omitted. The endpoint does not persist
+foreground records or modify the prepared background.
 
 ### Validation Errors
 
@@ -265,61 +164,36 @@ links external inputs to the configured background and biosphere databases, and 
 calculation in a disposable per-request project. The prepared background is not modified. This endpoint does not return
 an impact score or an Integrated LCA result.
 
-When the calculation completes with a finite score internally, the response is:
+For the PV request in the Compute Workflow, the calculation completes and diagnostics returns:
 
 ```json
 {
   "status": "calculable",
   "request": {
-    "product_system_identifier": "system-1",
+    "product_system_identifier": "pv-panel",
     "functional_unit": {
-      "reference_flow_identifier": "flow-1",
-      "quantity": 4.0,
-      "unit": "kg"
+      "reference_flow_identifier": "PVPanelManufacturingCNAct_flow0_PhotovoltaicPanelSingleSi",
+      "quantity": 1.0,
+      "unit": "m^2"
     },
-    "impact_method": ["CML v4.8 2016", "climate change", "global warming potential (GWP100)"]
+    "impact_method": ["EF v3.1", "climate change", "global warming potential (GWP100)"]
   },
   "diagnostic": null
 }
 ```
 
 When Brightway reports a singular technosphere, the response is `200` with
-`status: "not_calculable"` and a `SINGULAR_TECHNOSPHERE` diagnostic:
+`status: "not_calculable"`, the same `request` summary, and a `diagnostic` object. Its
+`code` is `SINGULAR_TECHNOSPHERE`; `message` explains that no unique solution or score is
+available. `components` contains any small groups of involved activities the service can
+identify. Each activity has a database, code, and name, and each group has
+`reachable_from_request`. The `scope` field explains the limits of this diagnosis. An empty
+`components` array does not mean the matrix is nonsingular, and reachability does not prove
+that foreground detail is missing.
 
-```json
-{
-  "status": "not_calculable",
-  "request": {
-    "product_system_identifier": "system-1",
-    "functional_unit": {
-      "reference_flow_identifier": "flow-1",
-      "quantity": 4.0,
-      "unit": "kg"
-    },
-    "impact_method": ["CML v4.8 2016", "climate change", "global warming potential (GWP100)"]
-  },
-  "diagnostic": {
-    "code": "SINGULAR_TECHNOSPHERE",
-    "message": "The assembled activity equations do not determine a unique solution; no impact score is available.",
-    "components": [{
-      "activities": [
-        {"database": "bonsai", "code": "activity-a", "name": "Activity A"},
-        {"database": "bonsai", "code": "activity-b", "name": "Activity B"}
-      ],
-      "reachable_from_request": true
-    }],
-    "scope": "Reports demonstrably singular, aligned activity blocks of 2 to 8 nodes. Reachability traces candidate production and consumption links from the requested demand; it does not establish that foreground detail is missing or that the list is exhaustive."
-  }
-}
-```
-
-The activity list is illustrative. `reachable_from_request` means the component is
-structurally reachable through candidate production and consumption links; it does not prove
-that the user's foreground is incomplete. Only small, aligned singular blocks are identified,
-so an empty `components` array does not mean the matrix is nonsingular. A foreground or
-background linkage failure returns `422 CALCULATION_PRECONDITION_FAILED`; invalid foreground
-construction returns `422 FOREGROUND_CONSTRUCTION_FAILED`. Input-model and HEX Core errors
-follow the same rules as `POST /compute`.
+A foreground or background linkage failure returns `422 CALCULATION_PRECONDITION_FAILED`;
+invalid foreground construction returns `422 FOREGROUND_CONSTRUCTION_FAILED`. Input-model and
+HEX Core errors follow the same rules as `POST /compute`.
 
 ## Error Responses
 

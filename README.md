@@ -1,14 +1,42 @@
 # CE-RISE SEE Impacts Calculation Service
 
-A containerized HTTP service that calculates environmental impacts from CE-RISE Product System
-and LCI Dataset objects and returns HEX Core-validated Integrated LCA results when the
-calculation succeeds. It also inspects an approved Brightway 2.5 background project and
-diagnoses requests that cannot be solved.
+A containerized HTTP service that calculates one environmental impact indicator for a CE-RISE
+Product System. It combines the supplied LCI Dataset foreground with the configured BONSAI
+background, then returns a validated Integrated LCA result or a calculation diagnostic.
 
 For the CE-RISE solution and its components, use the
 [CE-RISE Solution portal](https://solution.ce-rise.eu/) as the main entry point for human users.
 
-## Available Now
+## Calculate an Impact
+
+Send `POST /compute` with five fields:
+
+| Field | What to supply |
+| --- | --- |
+| `model_versions` | Product System and LCI Dataset schema versions for input validation, and the Integrated LCA schema version for output validation. These versions must be available in HEX Core. |
+| `product_system` | The CE-RISE Product System record selecting the activities and declaring the reference flow. |
+| `lci_datasets` | A non-empty array of CE-RISE LCI Dataset records referenced by the Product System. |
+| `functional_unit` | The declared reference-flow identifier and unit, plus the positive quantity to assess. |
+| `impact_method` | One complete method identifier, copied as an array from `GET /methods`. |
+
+Product System dataset references must resolve to the supplied LCI records, selected activities
+must exist in those records, and the reference flow must have the same identifier, quantity, and
+unit in the Product System and its LCI Dataset. Background activity and elementary-flow links
+must resolve in the configured Brightway project. Callers do not upload a Brightway project or
+submit a separate mapping file.
+
+On success, the response is one Integrated LCA object with one environmental indicator. It
+contains the requested functional unit, the numeric result and unit, the selected method, input
+references, and available background, factor-set, software, and timestamp provenance. A
+singular calculation instead returns `status: "not_calculable"` and any activity groups it can
+identify, without a score. Invalid inputs or unresolved links return `422`.
+
+The service validates the inputs and generated result through HEX Core. Configure a reachable
+`HEX_CORE_BASE_URL` with the requested model versions before calling `POST /compute`. See the
+[runnable PV request](docs/api-overview.md#send-a-request) and the
+[API Reference](docs/api-reference.md) for the full request and response shapes.
+
+## Available Operations
 
 The service provides:
 
@@ -22,39 +50,13 @@ The service provides:
 - `GET /openapi.json` and interactive API documentation at `/docs`;
 - a container image definition and tag-driven registry publication workflow.
 
-`POST /compute` requires a functional unit and a registered impact method. It delegates
-Product System and LCI Dataset conformance checks to HEX Core, assembles the foreground,
-calculates an impact score, builds an Integrated LCA object, and validates that object through
-HEX Core before returning it. Invalid inputs or unresolved calculation links return `422`;
-a singular technosphere returns a structured `not_calculable` diagnostic instead of a score.
-HEX Core must have the requested JSON Schema artifacts and be reachable at `HEX_CORE_BASE_URL`;
-set `HEX_CORE_BEARER_TOKEN` when it requires a service-to-service bearer token.
+`POST /compute/diagnostics` accepts the same input and runs the calculation but returns only
+`calculable` or `not_calculable`, never a score. For a singular technosphere, it identifies
+small activity groups and whether they are reachable from the requested demand.
 
-`POST /compute/diagnostics` accepts the same request and attempts an in-memory calculation.
-It reports `calculable` or `not_calculable`, never a score. For a singular
-technosphere, it reports small identified activity groups and whether they are reachable from
-the requested demand. These findings do not establish that foreground detail is missing and
-are not an exhaustive diagnosis.
-
-The published compute schema uses CE-RISE data plus the requested Brightway impact method:
-a Product System object and LCI Dataset object(s) are inputs, while the selected Integrated LCA
-version identifies the result object. The semantic content of the input objects is the basis
-for the internal Brightway calculation.
-Brightway is an implementation detail; there is no separate mapping object or API for callers to
-provide.
-
-Successful results record the configured background project, the imported BONSAI version and
-source release, the selected method and factor-set identifier, the calculation time, the
-service version, and the `bw2data` and `bw2calc` versions used for the calculation.
-
-The internal foreground builder assembles selected activities, product outputs, and internal
-input links from those objects. External background inputs and elementary flows are retained for
-the calculation stage. An internal runner links exact background and biosphere identifiers,
-converts compatible units, and combines the foreground with Brightway datapackages in memory.
-Each compute request runs in a separate process with a disposable copy of the prepared background
-project; the copy is removed after the response. It does not write to the bundled source data.
-The test suite checks this workflow with a PV Product System and LCI Dataset against the bundled
-BONSAI background and validates the Integrated LCA result against the published data model.
+Each compute request runs in a separate process with a disposable copy of the prepared
+background project. The source project is not changed. The test suite exercises the full
+workflow with a PV Product System and LCI Dataset against the bundled BONSAI background.
 
 ## Background Access
 
@@ -88,10 +90,12 @@ tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
 .venv/bin/see-impacts-compatibility
 ```
 
-Start the HTTP service:
+Start the HTTP service. Replace the example HEX Core address with one reachable from this
+machine; `/compute` uses it for input and output validation:
 
 ```bash
-.venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
+HEX_CORE_BASE_URL=http://hex-core-host:8080 \
+  .venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
 ```
 
 In another terminal, check it:
@@ -105,6 +109,16 @@ curl -sS http://127.0.0.1:8080/methods
 `GET /health` confirms the process is running. `GET /capabilities` opens the configured
 background project and lists its databases and sample methods. `GET /methods` lists every
 registered method identifier.
+
+With HEX Core reachable and a request JSON document prepared as shown in the
+[PV example](docs/api-overview.md#send-a-request), call:
+
+```bash
+curl --fail-with-body --silent --show-error \
+  -H 'Content-Type: application/json' \
+  --data-binary @compute-request.json \
+  http://127.0.0.1:8080/compute
+```
 
 ## Documentation
 
