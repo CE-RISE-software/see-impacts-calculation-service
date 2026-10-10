@@ -15,6 +15,8 @@ The service is a containerized Python HTTP application with these active compone
   graph, retaining external and elementary exchanges for later linking.
 - `foreground_calculation.py` links exact background and biosphere identifiers, builds an
   in-memory foreground datapackage, and runs an internal LCIA.
+- `project_lifecycle.py` copies the prepared project for each request, runs the calculation in
+  an isolated worker process, and removes the request copy afterward.
 - `integrated_lca_result.py` builds one environmental indicator and its input references in
   the Integrated LCA result structure.
 
@@ -32,6 +34,8 @@ the image prepares it at build time.
 Brightway project state is mutable and process-global. The compatibility probe uses
 `BRIGHTWAY_WORKSPACE_DIR` for this writable state and keeps the background project
 immutable. Do not use the background source directory as the Brightway workspace.
+
+`MAX_CONCURRENT_CALCULATIONS` bounds the number of active worker processes per server process.
 
 ## API Boundary
 

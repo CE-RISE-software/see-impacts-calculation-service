@@ -162,8 +162,8 @@ returns `200` with the same `not_calculable` diagnostic shape documented below, 
 Accepts the same request as `POST /compute`, including `impact_method`.
 The service validates the CE-RISE inputs through HEX Core, assembles the selected foreground,
 links external inputs to the configured background and biosphere databases, and attempts the
-calculation in a disposable per-request project. The prepared background is not modified. This endpoint does not return
-an impact score or an Integrated LCA result.
+calculation in a disposable per-request project. The prepared background is not modified. This
+endpoint does not return an impact score or an Integrated LCA result.
 
 For the PV request in the Compute Workflow, the calculation completes and diagnostics returns:
 
@@ -208,11 +208,11 @@ are:
 - `MODEL_VALIDATION_RESPONSE_INVALID` (`502`): HEX Core returned an incomplete validation report;
 - `CALCULATION_INPUT_INVALID` (`422`): the functional unit or reference-flow links are inconsistent;
 - `OUTPUT_MODEL_VALIDATION_FAILED` (`500`): the generated Integrated LCA object did not pass
-  HEX Core validation and was not returned.
+  HEX Core validation and was not returned;
 - `FOREGROUND_CONSTRUCTION_FAILED` (`422`): the validated input objects cannot be assembled
-  into a foreground calculation.
+  into a foreground calculation;
 - `CALCULATION_PRECONDITION_FAILED` (`422`): the diagnostic calculation cannot start or finish
-  for a reason other than a reported singular technosphere.
-- `CALCULATION_WORKER_UNAVAILABLE` (`503`): the isolated worker could not start or finish.
+  for a reason other than a reported singular technosphere;
+- `CALCULATION_WORKER_UNAVAILABLE` (`503`): the isolated worker could not start or finish;
 - `CALCULATION_CAPACITY_EXCEEDED` (`503`): all configured calculation slots are occupied;
   retry after an active calculation finishes.

@@ -1,44 +1,34 @@
-# Project Scope
+# Service Scope
 
-## Available Scope
+The service calculates one environmental impact indicator per request for a CE-RISE Product
+System. A request supplies the Product System, its referenced LCI Dataset records, a quantity
+for the declared reference flow, and an impact method registered in the configured Brightway
+project. The container includes a BONSAI background project; another prepared project can be
+configured for deployment.
 
-The repository provides a containerized Python HTTP service for calculating one environmental
-impact indicator from CE-RISE Product System and LCI Dataset inputs. The usable operations
-include the command-line compatibility probe, health, capability, and method-discovery
-endpoints, compute and diagnostic endpoints, OpenAPI document, and container release workflow.
-Input and output model validation is delegated to HEX Core.
+Applicability depends on the supplied foreground and on whether its background activity and
+elementary-flow references resolve in that project. It is not defined by a list of supported
+product categories. The service uses explicit links from the CE-RISE records and does not guess
+missing providers.
 
-Background source data remains local and read-only. Brightway registry state uses a separate
-writable workspace. The API and operating guidance are published through the repository's
-Codeberg Pages site.
+## Validation and Calculation
 
-## Calculation and Access Check
+Both compute endpoints validate the Product System and LCI Dataset records against the requested
+model versions through HEX Core. The service assembles their selected activities and exchanges,
+converts compatible units, and calculates in a disposable copy of the prepared background. The
+source background is not modified. Invalid records, unresolved links, and incompatible units
+return errors rather than a result.
 
-`POST /compute` accepts CE-RISE Product System and LCI Dataset objects, a requested functional
-unit, and an impact method. A successful calculation returns a HEX Core-validated Integrated
-LCA object containing one environmental indicator. A singular matrix returns a structured
-diagnostic without a score. `POST /compute/diagnostics` makes the same calculation attempt
-but does not publish the score or result object.
+## Results and Diagnostics
 
-The background check verifies read access to the imported BONSAI project through
-Brightway: database registration, one record and its exchanges per database, processed
-datapackages, and one registered impact method's factors. It does not prove that a particular
-foreground request will calculate. The prepared project is accessed read-only at runtime.
+`POST /compute` returns an Integrated LCA object with one environmental indicator, the assessed
+functional unit, method, and available data and software provenance. HEX Core validates the
+generated object against the requested Integrated LCA model version before it is returned.
 
-Foreground assembly is available as an internal module. It constructs selected activities,
-product outputs, and exact internal input links from CE-RISE records and identifies the reference
-output. It retains external background inputs and elementary flows for the calculation runner.
-The HTTP endpoints use transient datapackages rather than writing a foreground database.
+`POST /compute/diagnostics` attempts the same calculation but returns only whether it is
+calculable. If the technosphere is singular, either endpoint returns a diagnostic with any
+involved activity groups the service can identify, without an impact score.
 
-An internal calculation path combines the foreground with background and impact-method
-datapackages in memory. It uses exact background activity and biosphere flow identifiers and
-converts compatible units. The local full test suite builds a fresh BONSAI project and verifies a
-PV request through input validation, calculation, and Integrated LCA output validation. This
-does not guarantee that every foreground request can be solved.
-
-## Not Provided
-
-- a guarantee that every request is calculable with the supplied background;
-- uncertainty quantification, sensitivity analysis, or a multi-indicator assessment;
-- a Brightway database-management API;
-- a general-purpose LCA application, CLI, or notebook interface.
+The current calculation covers the environmental dimension of SEE impacts. Results are returned
+to the caller; this service does not store them. See the [Compute Workflow](api-overview.md) for
+the request and result, and [Local Testing](local-testing.md) for the tested PV example.

@@ -40,7 +40,7 @@ The service validates the inputs and generated result through HEX Core. Configur
 
 The service provides:
 
-- a Brightway 2.5 compatibility probe for an approved local background project;
+- a Brightway background compatibility probe for an approved local project;
 - `GET /health` for service identity and configuration inspection;
 - `GET /capabilities` for Brightway project and method availability;
 - `GET /methods` for the complete set of registered impact-method identifiers;
@@ -68,7 +68,8 @@ against the published data models without running the calculation. See
 
 ## Use Locally
 
-Create a virtual environment and install the service:
+Use Python 3.11 or 3.12 to create a virtual environment and install the service. The full test
+suite needs network access to Codeberg to fetch the published CE-RISE model schemas:
 
 ```bash
 python3 -m venv .venv
@@ -158,9 +159,10 @@ The released image includes the BONSAI background project from this repository. 
 for a container run example.
 
 
-## License
+## Software License
 
-Licensed under the [European Union Public Licence v1.2 (EUPL-1.2)](LICENSE).
+The service source is licensed under the [European Union Public Licence v1.2 (EUPL-1.2)](LICENSE).
+The bundled BONSAI files retain the CC BY-SA 4.0 license described under Background Data.
 
 ## Contributing
 
@@ -177,7 +179,8 @@ Views and opinions expressed are those of the author(s) only and do not necessar
 Neither the European Union nor the granting authority can be held responsible for them.
 
 © 2026 CE-RISE consortium.  
-Licensed under the [European Union Public Licence v1.2 (EUPL-1.2)](LICENSE).  
+Service source licensed under the [European Union Public Licence v1.2 (EUPL-1.2)](LICENSE).
+
 Attribution: CE-RISE project (Grant Agreement No. 101092281) and the individual authors/partners as indicated.
 
 <a href="https://www.nilu.com" target="_blank" rel="noopener noreferrer">

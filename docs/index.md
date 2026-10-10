@@ -37,7 +37,7 @@ requested model versions, then inspect `GET /capabilities` and choose a method f
 
 The [HEX Core integration](integration.md) page covers the validation dependency.
 [Architecture](architecture.md) describes the internal calculation, and
-[Project Scope](scope.md) lists the current boundaries.
+[Service Scope](scope.md) explains the assessment boundary.
 
 Funded by the European Union under Grant Agreement No. 101092281 — CE-RISE.  
 Views and opinions expressed are those of the author(s) only and do not necessarily reflect those of the European Union or the granting authority (HADEA).
@@ -48,7 +48,8 @@ Neither the European Union nor the granting authority can be held responsible fo
 </a>
 
 © 2026 CE-RISE consortium.  
-Licensed under the [European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12).  
+Service source licensed under the [European Union Public Licence v1.2 (EUPL-1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12).
+
 Attribution: CE-RISE project (Grant Agreement No. 101092281) and the individual authors/partners as indicated.
 
 <a href="https://www.nilu.com" target="_blank" rel="noopener noreferrer">

@@ -4,7 +4,8 @@ Run the complete test suite or prepare the bundled background for a local HTTP s
 
 ## Setup
 
-Create a virtual environment and install the service with its test dependencies:
+Use Python 3.11 or 3.12 to create a virtual environment and install the service with its test
+dependencies:
 
 ```bash
 python3 -m venv .venv
@@ -21,8 +22,9 @@ python3 -m venv .venv
 The suite builds a fresh Brightway project from the bundled seed and BONSAI IO release, then
 sends the PV fixture to `POST /compute`. It fetches the latest published Product System, LCI
 Dataset, and Integrated LCA schemas from Codeberg to validate the inputs and result. The same
-suite checks concurrent requests with a synthetic background. No manually prepared background
-project, live HEX Core, or opt-in flag is required. Codeberg runs the core tests on
+suite checks concurrent requests with a synthetic background. The full local suite therefore
+requires network access to Codeberg. No manually prepared background project, live HEX Core,
+or opt-in flag is required. Codeberg runs the core tests on
 `codeberg-medium` and the PV input/output record validation on `codeberg-small` for pushes,
 pull requests, and releases. The full PV calculation remains in the local suite; the hosted PV
 job does not run Brightway or check the calculated score.

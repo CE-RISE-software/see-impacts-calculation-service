@@ -59,9 +59,8 @@ The service accepts the following environment variables:
 `POST /compute` and `POST /compute/diagnostics` call HEX Core to retrieve each requested
 input model's JSON Schema and validate the Product System and LCI Dataset objects.
 `POST /compute` also validates the generated Integrated LCA object through HEX Core. Provision
-a reachable HEX Core registry
-and an appropriate service identity before using that endpoint. The bearer token is never
-returned by `GET /health`.
+a reachable HEX Core registry and an appropriate service identity before using that endpoint.
+The bearer token is never returned by `GET /health`.
 
 ## Background Data
 
