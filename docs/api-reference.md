@@ -153,8 +153,9 @@ Inconsistent reference-flow links return `422 CALCULATION_INPUT_INVALID`, with `
 naming the affected field. Missing input or output schemas, or an unavailable HEX Core, return
 `503`. A generated result that fails HEX Core validation returns
 `500 OUTPUT_MODEL_VALIDATION_FAILED` and is not published. Worker startup failures and timeouts
-return `503 CALCULATION_WORKER_UNAVAILABLE`. A singular calculation returns
-`200` with the same `not_calculable` diagnostic shape documented below, without a score.
+return `503 CALCULATION_WORKER_UNAVAILABLE`. When the configured per-process calculation
+capacity is full, the service returns `503 CALCULATION_CAPACITY_EXCEEDED`. A singular calculation
+returns `200` with the same `not_calculable` diagnostic shape documented below, without a score.
 
 ## `POST /compute/diagnostics`
 
@@ -212,3 +213,6 @@ are:
   into a foreground calculation.
 - `CALCULATION_PRECONDITION_FAILED` (`422`): the diagnostic calculation cannot start or finish
   for a reason other than a reported singular technosphere.
+- `CALCULATION_WORKER_UNAVAILABLE` (`503`): the isolated worker could not start or finish.
+- `CALCULATION_CAPACITY_EXCEEDED` (`503`): all configured calculation slots are occupied;
+  retry after an active calculation finishes.

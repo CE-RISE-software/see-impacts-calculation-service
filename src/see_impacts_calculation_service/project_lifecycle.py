@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import shutil
 import sys
@@ -26,6 +27,8 @@ from .foreground import (
 )
 from .foreground_calculation import ForegroundCalculationError, ForegroundImpact
 from .singularity import InvolvedActivity, SingularComponent, SingularityDiagnostic
+
+logger = logging.getLogger(__name__)
 
 
 class IsolatedWorkerError(RuntimeError):
@@ -121,9 +124,10 @@ async def calculate_isolated_foreground(
                 env=environment,
             )
         except OSError as error:
+            logger.exception("Isolated Brightway worker could not start")
             raise IsolatedWorkerError("Isolated Brightway worker could not start.") from error
         try:
-            stdout, _ = await asyncio.wait_for(
+            stdout, stderr = await asyncio.wait_for(
                 process.communicate(json.dumps(payload).encode()), timeout=timeout_secs
             )
         except asyncio.TimeoutError as error:
@@ -137,12 +141,21 @@ async def calculate_isolated_foreground(
             await process.communicate()
             raise
     if process.returncode != 0:
+        logger.error(
+            "Isolated Brightway worker exited with status %s; stderr: %s",
+            process.returncode,
+            stderr.decode(errors="replace")[-4096:],
+        )
         raise IsolatedWorkerError(
             f"Isolated Brightway worker exited with status {process.returncode}."
         )
     try:
         response = json.loads(stdout)
     except json.JSONDecodeError as error:
+        logger.error(
+            "Isolated Brightway worker returned an invalid response; stderr: %s",
+            stderr.decode(errors="replace")[-4096:],
+        )
         raise IsolatedWorkerError("Isolated Brightway worker returned an invalid response.") from error
     if response.get("status") == "error":
         diagnostic = response.get("diagnostic")
@@ -151,6 +164,10 @@ async def calculate_isolated_foreground(
             diagnostic=_restore_diagnostic(diagnostic) if diagnostic else None,
         )
     if response.get("status") != "ok":
+        logger.error(
+            "Isolated Brightway worker returned an unknown status; stderr: %s",
+            stderr.decode(errors="replace")[-4096:],
+        )
         raise IsolatedWorkerError("Isolated Brightway worker returned an unknown status.")
     impact = response["impact"]
     impact["method"] = tuple(impact["method"])

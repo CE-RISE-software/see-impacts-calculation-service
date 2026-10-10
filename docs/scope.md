@@ -32,7 +32,7 @@ The HTTP endpoints use transient datapackages rather than writing a foreground d
 
 An internal calculation path combines the foreground with background and impact-method
 datapackages in memory. It uses exact background activity and biosphere flow identifiers and
-converts compatible units. The normal test suite builds a fresh BONSAI project and verifies a
+converts compatible units. The local full test suite builds a fresh BONSAI project and verifies a
 PV request through input validation, calculation, and Integrated LCA output validation. This
 does not guarantee that every foreground request can be solved.
 

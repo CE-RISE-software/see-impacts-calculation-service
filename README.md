@@ -55,15 +55,15 @@ The service provides:
 small activity groups and whether they are reachable from the requested demand.
 
 Each compute request runs in a separate process with a disposable copy of the prepared
-background project. The source project is not changed. The test suite exercises the full
+background project. The source project is not changed. The local test suite exercises the full
 workflow with a PV Product System and LCI Dataset against the bundled BONSAI background.
 
 ## Background Access
 
-The compatibility probe verifies that Brightway can open the supplied BONSAI data, read a
-record and its exchanges from each bundled database, open each processed datapackage, and load
-factors from a registered impact method. It does not calculate impacts or validate a foreground
-inventory. The end-to-end PV test runs as part of the normal suite; see
+The compatibility probe checks that Brightway can read the configured background project and
+load a registered impact method. It does not calculate an impact or validate foreground records.
+The full PV calculation test runs locally; Codeberg CI validates the PV input and output records
+against the published data models without running the calculation. See
 [Local Testing](docs/local-testing.md).
 
 ## Use Locally

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from threading import BoundedSemaphore
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -67,6 +68,9 @@ def create_app(
     config: RuntimeConfig | None = None, hex_core_client: HexCoreClient | None = None
 ) -> FastAPI:
     runtime_config = config or RuntimeConfig.from_env()
+    if runtime_config.max_concurrent_calculations < 1:
+        raise ValueError("MAX_CONCURRENT_CALCULATIONS must be positive.")
+    calculation_slots = BoundedSemaphore(runtime_config.max_concurrent_calculations)
     validator = hex_core_client or HexCoreClient(
         runtime_config.hex_core_base_url, runtime_config.http_timeout_secs
     )
@@ -173,6 +177,14 @@ def create_app(
             "functional_unit": request.functional_unit.model_dump(),
             "impact_method": request.impact_method,
         }
+        if not calculation_slots.acquire(blocking=False):
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": "CALCULATION_CAPACITY_EXCEEDED",
+                    "message": "The service is handling the maximum number of calculations.",
+                },
+            )
         try:
             impact = await calculate_foreground(
                 assembly,
@@ -200,6 +212,8 @@ def create_app(
                 status_code=422,
                 detail={"code": "CALCULATION_PRECONDITION_FAILED", "message": str(error)},
             ) from error
+        finally:
+            calculation_slots.release()
         return impact, request_summary, None
 
     @app.post("/compute")

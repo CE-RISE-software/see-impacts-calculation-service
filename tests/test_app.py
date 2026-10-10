@@ -1,6 +1,7 @@
 import asyncio
 
 import httpx
+import pytest
 
 from see_impacts_calculation_service.app import create_app
 from see_impacts_calculation_service.compatibility import BrightwayCompatibilityError
@@ -449,7 +450,7 @@ async def _return_no_impact(*args, **kwargs):
     return None
 
 
-def _compute_app(tmp_path, validator):
+def _compute_app(tmp_path, validator, max_concurrent_calculations=2):
     return create_app(
         RuntimeConfig(
             bind_address="127.0.0.1",
@@ -459,6 +460,7 @@ def _compute_app(tmp_path, validator):
             background_project_dir=tmp_path / "background",
             background_project_name="cerise_bonsai",
             brightway_workspace_dir=tmp_path / "brightway-workspace",
+            max_concurrent_calculations=max_concurrent_calculations,
         ),
         hex_core_client=validator,
     )
@@ -507,6 +509,58 @@ def test_compute_returns_hex_core_validated_integrated_lca(tmp_path, monkeypatch
         ("integrated-lca", "0.0.1"),
     ]
     assert validator.calls[-1]["payload"] == result
+
+
+@pytest.mark.parametrize("first_fails", [False, True])
+def test_calculation_capacity_is_shared_and_released(tmp_path, monkeypatch, first_fails):
+    passed = {"passed": True, "results": [{"kind": "JsonSchema", "passed": True}]}
+    validator = StubHexCore([passed] * 8)
+    app = _compute_app(tmp_path, validator, max_concurrent_calculations=1)
+    started = asyncio.Event()
+    release = asyncio.Event()
+    calls = 0
+
+    async def calculate(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            started.set()
+            await release.wait()
+            if first_fails:
+                raise ForegroundCalculationError("Unavailable method.")
+        return _calculated_impact()
+
+    monkeypatch.setattr("see_impacts_calculation_service.app.calculate_foreground", calculate)
+
+    async def run_requests():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            first = asyncio.create_task(client.post("/compute", json=_diagnostic_request()))
+            await started.wait()
+            busy = await client.post("/compute/diagnostics", json=_diagnostic_request())
+            release.set()
+            completed = await first
+            later = await client.post("/compute/diagnostics", json=_diagnostic_request())
+        return busy, completed, later
+
+    busy, completed, later = asyncio.run(run_requests())
+
+    assert busy.status_code == 503
+    assert busy.json()["detail"]["code"] == "CALCULATION_CAPACITY_EXCEEDED"
+    assert completed.status_code == (422 if first_fails else 200)
+    assert later.status_code == 200
+    assert later.json()["status"] == "calculable"
+    assert calls == 2
+
+
+def test_calculation_capacity_must_be_positive(tmp_path):
+    with pytest.raises(ValueError, match="MAX_CONCURRENT_CALCULATIONS must be positive"):
+        _compute_app(tmp_path, StubHexCore([]), max_concurrent_calculations=0)
+
+
+def test_calculation_capacity_reads_environment(monkeypatch):
+    monkeypatch.setenv("MAX_CONCURRENT_CALCULATIONS", "3")
+    assert RuntimeConfig.from_env().max_concurrent_calculations == 3
 
 
 def test_compute_rejects_invalid_integrated_lca_output(tmp_path, monkeypatch):

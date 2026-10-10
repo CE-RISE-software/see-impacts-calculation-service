@@ -72,7 +72,7 @@ curl --fail-with-body --silent --show-error \
 ```
 
 For this fixture and bundled background, the climate-change indicator is approximately
-`109.927731 kg CO2-Eq` for `1 m^2` of the declared reference flow. The automated test checks
+`109.927731 kg CO2-Eq` for `1 m^2` of the declared reference flow. The local full PV test checks
 this result and validates both input records and the output against published model schemas.
 
 ## Read the Response

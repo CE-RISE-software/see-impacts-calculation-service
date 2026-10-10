@@ -9,7 +9,8 @@ Brightway can read the result. A failed import or verification stops the image b
 ## Image Publication
 
 Pushing a `v*.*.*` tag to the canonical Codeberg repository triggers the Forgejo release
-workflow. The test suite must pass before it builds and publishes:
+workflow. The core tests and PV record-validation job must pass before it builds and publishes;
+the local test suite includes the full BONSAI PV calculation, which hosted CI does not run:
 
 ```text
 $REGISTRY_HOST/$REGISTRY_NAMESPACE/see-impacts-calculation:<tag>
@@ -52,6 +53,8 @@ The service accepts the following environment variables:
 - `BRIGHTWAY_WORKSPACE_DIR`: writable Brightway registry workspace; default
   `runtime/brightway` locally and `/var/lib/see-impacts/brightway` in the container image.
 - `CALCULATION_TIMEOUT_SECS`: maximum time for one isolated calculation; default `900`.
+- `MAX_CONCURRENT_CALCULATIONS`: maximum active Brightway calculations per server process;
+  default `2`. Additional compute requests return `503` while all slots are occupied.
 
 `POST /compute` and `POST /compute/diagnostics` call HEX Core to retrieve each requested
 input model's JSON Schema and validate the Product System and LCI Dataset objects.

@@ -36,6 +36,7 @@ class RuntimeConfig:
     background_database_name: str = "bonsai"
     biosphere_database_name: str = "biosphere3"
     calculation_timeout_secs: int = 900
+    max_concurrent_calculations: int = 2
 
     @classmethod
     def from_env(cls) -> "RuntimeConfig":
@@ -62,4 +63,5 @@ class RuntimeConfig:
             background_database_name=_read_string("BACKGROUND_DATABASE_NAME", "bonsai"),
             biosphere_database_name=_read_string("BIOSPHERE_DATABASE_NAME", "biosphere3"),
             calculation_timeout_secs=_read_int("CALCULATION_TIMEOUT_SECS", 900),
+            max_concurrent_calculations=_read_int("MAX_CONCURRENT_CALCULATIONS", 2),
         )
