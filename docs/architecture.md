@@ -6,6 +6,7 @@ The service is a containerized Python HTTP application with these active compone
 
 - `app.py` exposes health, capability, compute, diagnostic, OpenAPI, and API-documentation endpoints;
 - `compatibility.py` opens the supplied Brightway project and reports its databases and methods;
+- `import_bonsai.py` verifies and imports the pinned BONSAI IO release during image preparation;
 - `brightway_runner.py` runs a single internal Brightway 2.5 LCIA and rejects non-finite scores;
 - `config.py` reads HTTP, background-project, and Brightway-workspace settings;
 - `hex_core.py` calls HEX Core for input and output model schema availability and validation;
@@ -18,15 +19,16 @@ The service is a containerized Python HTTP application with these active compone
 - `integrated_lca_result.py` builds one environmental indicator and its input references in
   the Integrated LCA result structure.
 
-The HTTP application does not expose Brightway database management. The repository includes a
-BONSAI background archive, expanded into the container image during the build.
+The HTTP application does not expose Brightway database management. The image build imports
+the bundled BONSAI 3.8-beta2 IO release into a seed project containing biosphere flows and
+registered impact methods.
 
 ## Background Data and Brightway State
 
 The bundled project is `cerise_bonsai`, located by default at
 `data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`. The compressed
-archive is tracked in Git. The expanded local project is ignored; the image expands the archive
-at build time.
+seed archive and public IO release are tracked in Git. The expanded local project is ignored;
+the image prepares it at build time.
 
 Brightway project state is mutable and process-global. The compatibility probe uses
 `BRIGHTWAY_WORKSPACE_DIR` for this writable state and keeps the background project
@@ -52,13 +54,13 @@ calculation. Foreground assembly resolves selected activities, product outputs, 
 and the reference output using model identifiers. It does not guess a provider from a matching
 unit alone. External background demands and elementary flows remain explicit in the assembled
 graph; materialization into a caller-owned writable Brightway database is available only when
-those boundaries are absent. The supplied BONSAI archive is not modified by foreground
+those boundaries are absent. The prepared BONSAI project is not modified by foreground
 construction. Brightway state is internal to the service; no additional mapping model, API
 resource, or persisted record is part of the service boundary.
 
 For calculation, the foreground runner adds a transient Brightway datapackage to the read-only
 background and method datapackages. External activity and biosphere flow references must resolve
 to exact identifiers in their configured databases; compatible units are converted. The runner
-rejects missing links and incompatible units and diagnoses singular calculations. The tested
-BONSAI snapshot currently has a singular technosphere for the examined foreground demand; the
-archive is not altered to obtain a score.
+rejects missing links and incompatible units and diagnoses singular calculations. Whether a
+particular foreground request is calculable depends on its exact links and demand; the prepared
+background is not altered by requests.

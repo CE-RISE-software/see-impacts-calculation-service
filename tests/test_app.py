@@ -153,7 +153,7 @@ def test_compute_reports_calculation_precondition_failure(tmp_path, monkeypatch)
         },
         "impact_method": ["example", "method"],
     }
-    def fail_calculation(*args, **kwargs):
+    async def fail_calculation(*args, **kwargs):
         raise ForegroundCalculationError("Unavailable method.")
 
     monkeypatch.setattr("see_impacts_calculation_service.app.calculate_foreground", fail_calculation)
@@ -441,6 +441,14 @@ def _calculated_impact():
     )
 
 
+async def _return_calculated_impact(*args, **kwargs):
+    return _calculated_impact()
+
+
+async def _return_no_impact(*args, **kwargs):
+    return None
+
+
 def _compute_app(tmp_path, validator):
     return create_app(
         RuntimeConfig(
@@ -462,7 +470,7 @@ def test_compute_returns_hex_core_validated_integrated_lca(tmp_path, monkeypatch
     app = _compute_app(tmp_path, validator)
     monkeypatch.setattr(
         "see_impacts_calculation_service.app.calculate_foreground",
-        lambda *args, **kwargs: _calculated_impact(),
+        _return_calculated_impact,
     )
 
     response = asyncio.run(_request(app, "POST", "/compute", json=_diagnostic_request()))
@@ -508,7 +516,7 @@ def test_compute_rejects_invalid_integrated_lca_output(tmp_path, monkeypatch):
     app = _compute_app(tmp_path, validator)
     monkeypatch.setattr(
         "see_impacts_calculation_service.app.calculate_foreground",
-        lambda *args, **kwargs: _calculated_impact(),
+        _return_calculated_impact,
     )
 
     response = asyncio.run(_request(app, "POST", "/compute", json=_diagnostic_request()))
@@ -525,7 +533,7 @@ def test_compute_requires_integrated_lca_schema(tmp_path, monkeypatch):
     app = _compute_app(tmp_path, validator)
     monkeypatch.setattr(
         "see_impacts_calculation_service.app.calculate_foreground",
-        lambda *args, **kwargs: _calculated_impact(),
+        _return_calculated_impact,
     )
     original_schema_available = validator.schema_available
 
@@ -554,7 +562,7 @@ def test_compute_returns_singularity_without_output_validation(tmp_path, monkeyp
         scope="Small singular components were not identified.",
     )
 
-    def fail_calculation(*args, **kwargs):
+    async def fail_calculation(*args, **kwargs):
         raise ForegroundCalculationError("singular", diagnostic=diagnostic)
 
     monkeypatch.setattr("see_impacts_calculation_service.app.calculate_foreground", fail_calculation)
@@ -595,7 +603,7 @@ def test_compute_diagnostics_reports_singular_activities(tmp_path, monkeypatch):
         scope="This finding does not establish missing foreground detail.",
     )
 
-    def fail_calculation(*args, **kwargs):
+    async def fail_calculation(*args, **kwargs):
         assert kwargs["method"] == ("example", "method")
         raise ForegroundCalculationError("singular", diagnostic=diagnostic)
 
@@ -630,7 +638,7 @@ def test_compute_diagnostics_reports_calculable_without_score(tmp_path, monkeypa
         ),
         hex_core_client=validator,
     )
-    monkeypatch.setattr("see_impacts_calculation_service.app.calculate_foreground", lambda *args, **kwargs: None)
+    monkeypatch.setattr("see_impacts_calculation_service.app.calculate_foreground", _return_no_impact)
 
     response = asyncio.run(_request(app, "POST", "/compute/diagnostics", json=_diagnostic_request()))
 

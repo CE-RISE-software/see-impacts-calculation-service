@@ -124,6 +124,50 @@ def test_preserves_unselected_producer_as_external_reference():
     assert result.external_inputs[0].counterpart_reference == "grid-activity"
 
 
+def test_background_linked_waste_output_is_treatment_demand():
+    system, dataset = example()
+    dataset["flows"].append({
+        "flow_identifier": "waste-output", "flow_kind": "WASTE_FLOW",
+        "output_of_activity_reference": "assembly",
+        "counterpart_activity_reference": "treatment-process",
+        "flow_object_reference": "waste", "flow_numerical_value": 0.25,
+        "flow_unit_reference": "kg",
+    })
+
+    result = build(system, dataset)
+
+    assert len(result.outputs) == 2
+    assert len(result.external_treatments) == 1
+    assert result.external_treatments[0].producer == ("inventory", "assembly")
+    assert result.external_treatments[0].counterpart_reference == "treatment-process"
+
+
+def test_foreground_linked_waste_remains_internal_output():
+    system, dataset = example()
+    dataset["flows"].extend([
+        {
+            "flow_identifier": "waste-output", "flow_kind": "WASTE_FLOW",
+            "output_of_activity_reference": "material-production",
+            "counterpart_activity_reference": "assembly",
+            "flow_object_reference": "waste", "flow_numerical_value": 0.25,
+            "flow_unit_reference": "kg",
+        },
+        {
+            "flow_identifier": "waste-input", "flow_kind": "WASTE_FLOW",
+            "input_to_activity_reference": "assembly",
+            "counterpart_activity_reference": "material-production",
+            "flow_object_reference": "waste", "flow_numerical_value": 0.25,
+            "flow_unit_reference": "kg",
+        },
+    ])
+
+    result = build(system, dataset)
+
+    assert not result.external_treatments
+    assert any(flow.key[1] == "waste-output" for flow in result.outputs)
+    assert any(flow.provider_output[1] == "waste-output" for flow in result.inputs)
+
+
 def test_rejects_missing_determining_output():
     system, dataset = example()
     dataset["activities"][0]["determining_flow_reference"] = "other-flow"

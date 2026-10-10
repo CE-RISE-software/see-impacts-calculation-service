@@ -44,7 +44,7 @@ Example response shape:
         "name": "bonsai",
         "backend": "iotable",
         "format": "EXIOBASE 3",
-        "activity_count": 42088
+        "activity_count": 34567
       }
     ],
     "method_count": 668,
@@ -231,9 +231,9 @@ The method identifier is registered in the supplied project, but the score and i
 are illustrative and do not represent a verified BONSAI result. The project identifier records
 which configured background was used; it is not a content checksum or dataset version. The
 toolchain versions come from the Brightway runtime used for the calculation. The
-endpoint does not write foreground records
-or modify the background project. It validates each input model, resolves the reference
-flow and foreground links, runs a calculation in memory, and validates the output model.
+endpoint does not persist foreground records or modify the prepared background. It validates
+each input model, resolves the reference flow and foreground links, runs the calculation in a
+disposable per-request Brightway project, and validates the output model.
 
 Apart from the requested impact-method identifier, the schema has no Brightway-specific
 fields. Product System and LCI Dataset objects are the
@@ -249,7 +249,8 @@ incompatible JSON type. HEX Core model failures return `422 MODEL_VALIDATION_FAI
 Inconsistent reference-flow links return `422 CALCULATION_INPUT_INVALID`, with `detail.field`
 naming the affected field. Missing input or output schemas, or an unavailable HEX Core, return
 `503`. A generated result that fails HEX Core validation returns
-`500 OUTPUT_MODEL_VALIDATION_FAILED` and is not published. A singular calculation returns
+`500 OUTPUT_MODEL_VALIDATION_FAILED` and is not published. Worker startup failures and timeouts
+return `503 CALCULATION_WORKER_UNAVAILABLE`. A singular calculation returns
 `200` with the same `not_calculable` diagnostic shape documented below, without a score.
 
 ## `POST /compute/diagnostics`
@@ -257,7 +258,7 @@ naming the affected field. Missing input or output schemas, or an unavailable HE
 Accepts the same request as `POST /compute`, including `impact_method`.
 The service validates the CE-RISE inputs through HEX Core, assembles the selected foreground,
 links external inputs to the configured background and biosphere databases, and attempts the
-calculation in memory. The background project is not modified. This endpoint does not return
+calculation in a disposable per-request project. The prepared background is not modified. This endpoint does not return
 an impact score or an Integrated LCA result.
 
 When the calculation completes with a finite score internally, the response is:

@@ -13,7 +13,7 @@ from bw_processing.matrix_entry import MatrixEntry, MatrixName, create_datapacka
 from scipy.sparse.linalg import MatrixRankWarning
 
 from .compatibility import BrightwayCompatibilityError, _load_brightway_project, _version_string
-from .foreground import ForegroundAssembly
+from .foreground import ExternalInput, ForegroundAssembly
 from .singularity import SingularityDiagnostic, diagnose_singularity
 
 
@@ -39,11 +39,14 @@ class ForegroundImpact:
 
 
 _UNITS = pint.UnitRegistry()
+_BRIGHTWAY_UNIT_ALIASES = {"m3": "meter ** 3"}
 
 
 def _converted_amount(amount: float, source_unit: str, target_unit: str, label: str) -> float:
     try:
-        converted = (amount * _UNITS.Unit(source_unit)).to(target_unit).magnitude
+        converted = (amount * _UNITS.Unit(source_unit)).to(
+            _BRIGHTWAY_UNIT_ALIASES.get(target_unit, target_unit)
+        ).magnitude
     except (pint.UndefinedUnitError, pint.DimensionalityError, ValueError) as error:
         raise ForegroundCalculationError(
             f"{label} unit {source_unit!r} cannot be converted to {target_unit!r}."
@@ -65,6 +68,22 @@ def _node(database: Any, code: str, label: str) -> Any:
             f"{label} identifier {code!r} was not found in database {database.name!r}."
         )
     return node
+
+
+def _required_database_names(bd: Any, background_name: str, biosphere_name: str) -> tuple[str, ...]:
+    required = {background_name, biosphere_name}
+    pending = list(required)
+    while pending:
+        name = pending.pop()
+        for dependency in bd.databases[name].get("depends", []):
+            if dependency not in bd.databases:
+                raise ForegroundCalculationError(
+                    f"Brightway database {name!r} depends on unavailable database {dependency!r}."
+                )
+            if dependency not in required:
+                required.add(dependency)
+                pending.append(dependency)
+    return tuple(name for name in bd.databases if name in required)
 
 
 def _foreground_datapackage(
@@ -99,7 +118,7 @@ def _foreground_datapackage(
         )
         for flow in assembly.inputs
     )
-    for flow in assembly.external_inputs:
+    for flow in (*assembly.external_inputs, *assembly.external_treatments):
         if not flow.counterpart_reference:
             raise ForegroundCalculationError(
                 f"External flow {flow.key!r} has no counterpart activity identifier."
@@ -123,7 +142,7 @@ def _foreground_datapackage(
         technosphere.append(
             MatrixEntry(
                 row=provider.id,
-                col=activity_ids[flow.consumer],
+                col=activity_ids[flow.consumer if isinstance(flow, ExternalInput) else flow.producer],
                 amount=_converted_amount(flow.amount, flow.unit, provider_unit, str(flow.key)),
                 flip=True,
             )
@@ -181,14 +200,17 @@ def calculate_foreground(
 
     background = bd.Database(background_database_name)
     biosphere = bd.Database(biosphere_database_name)
-    highest_id = max(node.id for name in bd.databases for node in bd.Database(name))
+    required_databases = _required_database_names(
+        bd, background_database_name, biosphere_database_name
+    )
+    highest_id = max(node.id for name in required_databases for node in bd.Database(name))
     foreground_package, reference_id = _foreground_datapackage(
         assembly,
         next_id=highest_id + 1,
         background_database=background,
         biosphere_database=biosphere,
     )
-    packages = [bd.Database(name).datapackage() for name in bd.databases]
+    packages = [bd.Database(name).datapackage() for name in required_databases]
     packages.extend((bd.Method(method).datapackage(), foreground_package))
     try:
         calculation = bc.LCA(

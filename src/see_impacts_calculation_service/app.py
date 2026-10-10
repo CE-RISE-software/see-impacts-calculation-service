@@ -13,10 +13,11 @@ from .assessment_inputs import AssessmentInputError
 from .compatibility import BrightwayCompatibilityError, list_methods, run_probe
 from .config import RuntimeConfig
 from .foreground import ForegroundConstructionError, assemble_foreground
-from .foreground_calculation import ForegroundCalculationError, ForegroundImpact, calculate_foreground
+from .foreground_calculation import ForegroundCalculationError, ForegroundImpact
 from .hex_core import HexCoreClient
 from .integrated_lca_result import build_integrated_lca_result
 from .model_validation import ModelValidationError, validate_assessment_inputs, validate_model_payload
+from .project_lifecycle import IsolatedWorkerError, calculate_isolated_foreground as calculate_foreground
 
 
 class ModelVersions(BaseModel):
@@ -173,7 +174,7 @@ def create_app(
             "impact_method": request.impact_method,
         }
         try:
-            impact = calculate_foreground(
+            impact = await calculate_foreground(
                 assembly,
                 project_dir=runtime_config.background_project_dir,
                 workspace_dir=runtime_config.brightway_workspace_dir,
@@ -181,7 +182,13 @@ def create_app(
                 background_database_name=runtime_config.background_database_name,
                 biosphere_database_name=runtime_config.biosphere_database_name,
                 method=tuple(request.impact_method),
+                timeout_secs=runtime_config.calculation_timeout_secs,
             )
+        except IsolatedWorkerError as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "CALCULATION_WORKER_UNAVAILABLE", "message": str(error)},
+            ) from error
         except ForegroundCalculationError as error:
             if error.diagnostic is not None:
                 return None, request_summary, {

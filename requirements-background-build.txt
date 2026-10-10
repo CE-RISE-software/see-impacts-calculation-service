@@ -1,0 +1,2 @@
+# BONSAI IO importer, pinned to the commit verified with the 3.8-beta2 (bw) release.
+https://github.com/mfastudillo/brightway2-io/archive/9f62977cf83ffa45453f410a3bdbc19f38b03811.zip

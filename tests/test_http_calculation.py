@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import subprocess
@@ -25,6 +26,7 @@ def test_compute_http_with_real_synthetic_brightway_project(tmp_path):
     )
     workspace = tmp_path / "workspace"
     workspace.mkdir()
+    background_digest = hashlib.sha256((source / "lci" / "databases.db").read_bytes()).hexdigest()
     env["BRIGHTWAY2_DIR"] = str(workspace)
     result = subprocess.run(
         [sys.executable, str(fixture_dir / "http_calculation_smoke.py"), str(source), str(workspace)],
@@ -42,7 +44,13 @@ def test_compute_http_with_real_synthetic_brightway_project(tmp_path):
         "methods": [["synthetic", "climate"]],
     }
     assert report["compute_status"] == 200
+    assert report["second_compute_status"] == 200
     assert report["result"] == report["validated_output"]
+    assert report["second_result"] == report["result"]
+    assert report["invalid_compute_status"] == 422
+    assert report["invalid_compute_result"]["detail"]["code"] == "CALCULATION_PRECONDITION_FAILED"
+    assert report["remaining_request_projects"] == []
+    assert hashlib.sha256((source / "lci" / "databases.db").read_bytes()).hexdigest() == background_digest
     instance = report["result"]["lca_analysis_instances"][0]
     indicator = instance["assessment_results"]["assessment_indicators"][0]
     assert indicator["indicator_result"] == {"numeric_value": 54.0, "unit": "kg CO2-eq"}
@@ -51,4 +59,6 @@ def test_compute_http_with_real_synthetic_brightway_project(tmp_path):
         ("bw2data", "4.7"),
         ("bw2calc", "2.5.0"),
     ]
-    assert report["validated_families"] == ["product-system", "lci-dataset", "integrated-lca"]
+    assert sorted(report["validated_families"]) == sorted(
+        ["product-system", "lci-dataset"] * 3 + ["integrated-lca"] * 2
+    )

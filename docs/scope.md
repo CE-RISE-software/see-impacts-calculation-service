@@ -20,10 +20,10 @@ LCA object containing one environmental indicator. A singular matrix returns a s
 diagnostic without a score. `POST /compute/diagnostics` makes the same calculation attempt
 but does not publish the score or result object.
 
-The current background check verifies read access to the supplied BONSAI archive through
+The background check verifies read access to the imported BONSAI project through
 Brightway: database registration, one record and its exchanges per database, processed
 datapackages, and one registered impact method's factors. It does not prove that a particular
-foreground request will calculate. The source archive is accessed read-only.
+foreground request will calculate. The prepared project is accessed read-only at runtime.
 
 Foreground assembly is available as an internal module. It constructs selected activities,
 product outputs, and exact internal input links from CE-RISE records and identifies the reference
@@ -33,9 +33,9 @@ writable Brightway database; the HTTP endpoints instead use transient datapackag
 
 An internal calculation path combines the foreground with background and impact-method
 datapackages in memory. It uses exact background activity and biosphere flow identifiers and
-converts compatible units. The synthetic numerical test succeeds. The supplied BONSAI snapshot
-does not currently yield a score for the tested foreground demand because its combined
-technosphere is singular. This does not change the source archive or rule out other requests.
+converts compatible units. The synthetic numerical test succeeds, and a direct Brightway
+calculation against the imported BONSAI 3.8-beta2 background has produced a finite score. This
+does not guarantee that every foreground request can be solved.
 
 ## Not Provided
 

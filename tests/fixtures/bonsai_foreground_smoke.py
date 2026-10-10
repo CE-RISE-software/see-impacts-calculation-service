@@ -54,7 +54,7 @@ def main() -> None:
         system, [dataset], reference_flow_identifier="product-output", quantity=1.0, unit="kg"
     )
     try:
-        calculate_foreground(
+        impact = calculate_foreground(
             assembly,
             project_dir=Path(sys.argv[1]),
             workspace_dir=Path(sys.argv[2]),
@@ -63,6 +63,7 @@ def main() -> None:
             biosphere_database_name="biosphere3",
             method=("CML v4.8 2016", "climate change", "global warming potential (GWP100)"),
         )
+        print(json.dumps({"status": "calculable", "impact": asdict(impact)}))
     except ForegroundCalculationError as error:
         if error.diagnostic is None:
             raise

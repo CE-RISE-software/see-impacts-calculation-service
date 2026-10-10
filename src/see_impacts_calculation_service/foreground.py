@@ -54,6 +54,15 @@ class ExternalInput:
 
 
 @dataclass(frozen=True)
+class ExternalTreatment:
+    key: FlowKey
+    producer: ActivityKey
+    counterpart_reference: str
+    amount: float
+    unit: str
+
+
+@dataclass(frozen=True)
 class ElementaryFlow:
     key: FlowKey
     activity: ActivityKey
@@ -69,6 +78,7 @@ class ForegroundAssembly:
     outputs: tuple[ForegroundOutput, ...]
     inputs: tuple[ForegroundInput, ...]
     external_inputs: tuple[ExternalInput, ...]
+    external_treatments: tuple[ExternalTreatment, ...]
     elementary_flows: tuple[ElementaryFlow, ...]
     reference_output: FlowKey
     demand: ReferenceFlowDemand
@@ -137,6 +147,7 @@ def assemble_foreground(
         for key, record in selected.items()
     )
     outputs: list[ForegroundOutput] = []
+    external_treatments: list[ExternalTreatment] = []
     pending_inputs: list[tuple[FlowKey, ActivityKey, dict[str, Any]]] = []
     elementary: list[ElementaryFlow] = []
     seen_flows: set[FlowKey] = set()
@@ -162,15 +173,31 @@ def assemble_foreground(
                 if producer_selected:
                     if direction not in (None, "OUTPUT"):
                         raise ForegroundConstructionError(f"Output flow {key!r} has conflicting direction.")
-                    outputs.append(
-                        ForegroundOutput(
-                            key=key,
-                            producer=producer,
-                            object_reference=flow.get("flow_object_reference"),
-                            amount=_amount(flow, key),
-                            unit=_unit(flow, key),
-                        )
+                    counterpart = flow.get("counterpart_activity_reference")
+                    foreground_counterpart = any(
+                        counterpart in aliases for aliases in selected_aliases.values()
                     )
+                    if (
+                        kind == "WASTE_FLOW"
+                        and isinstance(counterpart, str)
+                        and counterpart
+                        and not foreground_counterpart
+                    ):
+                        external_treatments.append(
+                            ExternalTreatment(
+                                key, producer, counterpart, _amount(flow, key), _unit(flow, key)
+                            )
+                        )
+                    else:
+                        outputs.append(
+                            ForegroundOutput(
+                                key=key,
+                                producer=producer,
+                                object_reference=flow.get("flow_object_reference"),
+                                amount=_amount(flow, key),
+                                unit=_unit(flow, key),
+                            )
+                        )
                 if consumer_selected:
                     if direction not in (None, "INPUT"):
                         raise ForegroundConstructionError(f"Input flow {key!r} has conflicting direction.")
@@ -259,6 +286,7 @@ def assemble_foreground(
         outputs=tuple(outputs),
         inputs=tuple(internal_inputs),
         external_inputs=tuple(external_inputs),
+        external_treatments=tuple(external_treatments),
         elementary_flows=tuple(elementary),
         reference_output=reference_candidates[0].key,
         demand=demand,
@@ -268,7 +296,7 @@ def assemble_foreground(
 def materialize_foreground(assembly: ForegroundAssembly, database: Any) -> None:
     """Write a fully resolved foreground graph into a caller-owned Brightway database."""
 
-    if assembly.external_inputs or assembly.elementary_flows:
+    if assembly.external_inputs or assembly.external_treatments or assembly.elementary_flows:
         raise ForegroundConstructionError(
             "External and elementary flows require background/biosphere linking in the calculation stage."
         )

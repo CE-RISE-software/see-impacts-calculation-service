@@ -2,8 +2,9 @@
 
 ## Service Form
 
-This project is deployed as a containerized HTTP service. The repository includes the BONSAI
-background archive. The `Dockerfile` expands it into the image at the default project path.
+This project is deployed as a containerized HTTP service. The `Dockerfile` extracts the seed
+Brightway project, imports the bundled BONSAI 3.8-beta2 IO release into it, and verifies that
+Brightway can read the result. A failed import or verification stops the image build.
 
 ## Image Publication
 
@@ -50,6 +51,7 @@ The service accepts the following environment variables:
 - `BIOSPHERE_DATABASE_NAME`: Brightway database used for elementary flows; default `biosphere3`;
 - `BRIGHTWAY_WORKSPACE_DIR`: writable Brightway registry workspace; default
   `runtime/brightway` locally and `/var/lib/see-impacts/brightway` in the container image.
+- `CALCULATION_TIMEOUT_SECS`: maximum time for one isolated calculation; default `900`.
 
 `POST /compute` and `POST /compute/diagnostics` call HEX Core to retrieve each requested
 input model's JSON Schema and validate the Product System and LCI Dataset objects.
@@ -60,17 +62,19 @@ returned by `GET /health`.
 
 ## Background Data
 
-The image contains the BONSAI Brightway project from the repository and treats it as immutable.
-The service creates Brightway registry state in
-`BRIGHTWAY_WORKSPACE_DIR`; this path must be writable and must not be the background source
-directory.
+The image contains a prepared BONSAI 3.8-beta2 Brightway project and treats it as
+immutable. Each compute request creates a temporary project copy under
+`BRIGHTWAY_WORKSPACE_DIR/requests`, calculates in a separate process, and removes the copy after
+completion or timeout. The workspace must be writable and must not be inside the background
+source directory. The build uses the pinned
+[BONSAI Brightway importer](https://github.com/mfastudillo/brightway2-io/blob/9f62977cf83ffa45453f410a3bdbc19f38b03811/bw2io/importers/bonsai.py)
+and the [public IO release](https://doi.org/10.5281/zenodo.15421526). The six source files
+are not carried into the runtime image.
 
-BONSAI publishes its data under [CC BY 4.0](https://bonsai.uno/terms). The computing module's
-source code has a separate EUPL-1.2 license. Attribute the background data to BONSAI when
-redistributing the image.
+This IO release is licensed CC BY-SA 4.0. The computing module's source code has a separate
+EUPL-1.2 license. Attribute the BONSAI release when redistributing the image.
 
-Each concurrently running worker should use its own writable Brightway workspace. This avoids
-concurrent mutation of Brightway's process-global project registry.
+Concurrent compute requests have separate Brightway processes and request workspaces.
 
 ## Run Example
 

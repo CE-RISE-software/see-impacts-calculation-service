@@ -14,7 +14,12 @@ from see_impacts_calculation_service.foreground_calculation import (
 )
 
 
-def sample_inputs(counterpart: str, input_unit: str = "kg", input_amount: float = 2.0):
+def sample_inputs(
+    counterpart: str,
+    input_unit: str = "kg",
+    input_amount: float = 2.0,
+    waste_amount: float | None = None,
+):
     system = {
         "product_system_identifier": "test-system",
         "lci_dataset_references": [{
@@ -65,6 +70,16 @@ def sample_inputs(counterpart: str, input_unit: str = "kg", input_amount: float 
             },
         ],
     }
+    if waste_amount is not None:
+        dataset["flows"].append({
+            "flow_identifier": "treated-waste",
+            "flow_kind": "WASTE_FLOW",
+            "output_of_activity_reference": "make-product",
+            "counterpart_activity_reference": counterpart,
+            "flow_object_reference": "waste",
+            "flow_numerical_value": waste_amount,
+            "flow_unit_reference": "kg",
+        })
     return system, dataset
 
 
@@ -74,7 +89,8 @@ def main() -> None:
     counterpart = sys.argv[3]
     input_unit = sys.argv[4] if len(sys.argv) > 4 else "kg"
     input_amount = float(sys.argv[5]) if len(sys.argv) > 5 else 2.0
-    system, dataset = sample_inputs(counterpart, input_unit, input_amount)
+    waste_amount = float(sys.argv[6]) if len(sys.argv) > 6 else None
+    system, dataset = sample_inputs(counterpart, input_unit, input_amount, waste_amount)
     assembly = assemble_foreground(
         system, [dataset],
         reference_flow_identifier="product-output", quantity=4.0, unit="kg",

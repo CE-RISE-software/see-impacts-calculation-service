@@ -46,31 +46,42 @@ async def main() -> None:
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
         methods = await client.get("/methods")
-        response = await client.post(
-            "/compute",
-            json={
-                "model_versions": {
-                    "product_system": "0.2.0",
-                    "lci_dataset": "0.2.0",
-                    "integrated_lca": "0.2.0",
-                },
-                "product_system": product_system,
-                "lci_datasets": [dataset],
-                "functional_unit": {
-                    "reference_flow_identifier": "product-output",
-                    "quantity": 4.0,
-                    "unit": "kg",
-                },
-                "impact_method": ["synthetic", "climate"],
+        request = {
+            "model_versions": {
+                "product_system": "0.2.0",
+                "lci_dataset": "0.2.0",
+                "integrated_lca": "0.2.0",
             },
+            "product_system": product_system,
+            "lci_datasets": [dataset],
+            "functional_unit": {
+                "reference_flow_identifier": "product-output",
+                "quantity": 4.0,
+                "unit": "kg",
+            },
+            "impact_method": ["synthetic", "climate"],
+        }
+        response, second_response = await asyncio.gather(
+            client.post("/compute", json=request),
+            client.post("/compute", json=request),
         )
+        validated_output = validator.calls[-1]["payload"]
+        invalid_request = {**request, "impact_method": ["missing", "method"]}
+        invalid_response = await client.post("/compute", json=invalid_request)
     print(json.dumps({
         "methods_status": methods.status_code,
         "methods": methods.json(),
         "compute_status": response.status_code,
+        "second_compute_status": second_response.status_code,
         "result": response.json(),
+        "second_result": second_response.json(),
+        "invalid_compute_status": invalid_response.status_code,
+        "invalid_compute_result": invalid_response.json(),
         "validated_families": [call["model_family"] for call in validator.calls],
-        "validated_output": validator.calls[-1]["payload"],
+        "validated_output": validated_output,
+        "remaining_request_projects": sorted(
+            path.name for path in (workspace / "requests").iterdir()
+        ),
     }))
 
 

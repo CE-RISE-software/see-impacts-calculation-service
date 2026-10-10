@@ -51,8 +51,10 @@ The internal foreground builder assembles selected activities, product outputs, 
 input links from those objects. External background inputs and elementary flows are retained for
 the calculation stage. An internal runner links exact background and biosphere identifiers,
 converts compatible units, and combines the foreground with Brightway datapackages in memory.
-It does not write to the BONSAI archive. The supplied BONSAI snapshot currently yields a
-singular technosphere for the tested calculation, so no numerical result is claimed for it.
+Each compute request runs in a separate process with a disposable copy of the prepared background
+project; the copy is removed after the response. It does not write to the bundled source data.
+The BONSAI 3.8-beta2 background has produced a finite score in a direct Brightway calculation;
+individual foreground requests still depend on their exact links and functional unit.
 
 ## Background Access
 
@@ -70,13 +72,18 @@ Create a virtual environment and install the service:
 python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -e '.[dev]'
+.venv/bin/python -m pip install -r requirements-background-build.txt
 ```
 
-Expand the included BONSAI archive, then verify the Brightway project:
+Prepare the local Brightway project from the bundled seed and BONSAI IO release:
 
 ```bash
 mkdir -p data/background/projects
 tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
+.venv/bin/python -m see_impacts_calculation_service.import_bonsai \
+  data/background/bonsai-3.8-beta2 \
+  data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
+  --project-name cerise_bonsai
 .venv/bin/see-impacts-compatibility
 .venv/bin/python -m pytest
 ```
@@ -110,14 +117,15 @@ The published Pages site contains endpoint, deployment, and local-testing detail
 
 ## Background Data
 
-The repository includes `data/background/cerise_bonsai.tar.gz`. Extract it locally as shown
-above; the container image extracts it during the build. The default Brightway project is
+The repository includes a seed Brightway project with biosphere flows and impact methods,
+plus the six-file [BONSAI 3.8-beta2 (bw) IO release](https://doi.org/10.5281/zenodo.15421526).
+The build imports that release as the `bonsai` database. The default Brightway project is
 `data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`.
 The expanded local project remains untracked. Use a distinct writable
 `BRIGHTWAY_WORKSPACE_DIR` for Brightway state. See
-[Background Data](data/background/README.md) for the archive checksum and BONSAI attribution.
-BONSAI publishes its data under [CC BY 4.0](https://bonsai.uno/terms); the computing module's
-source code is licensed separately under EUPL-1.2.
+[Background Data](data/background/README.md) for checksums and attribution. The pinned IO
+release is published under CC BY-SA 4.0; the computing module's source code is licensed
+separately under EUPL-1.2.
 
 ## Container Releases
 
