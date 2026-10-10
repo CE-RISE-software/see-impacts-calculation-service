@@ -85,6 +85,11 @@ class PublishedModelValidator:
         }
 
 
+@pytest.fixture(scope="module")
+def published_validator() -> PublishedModelValidator:
+    return PublishedModelValidator()
+
+
 def _run_background_step(*args: str) -> None:
     with TemporaryDirectory(prefix="see-pv-import-home-") as home:
         environment = {
@@ -107,8 +112,9 @@ def _run_background_step(*args: str) -> None:
         raise RuntimeError(f"{args[0]} failed:\n{result.stdout}\n{result.stderr}")
 
 
-async def _compute(project: Path, workspace: Path) -> tuple[dict, PublishedModelValidator]:
-    validator = PublishedModelValidator()
+async def _compute(
+    project: Path, workspace: Path, validator: PublishedModelValidator
+) -> dict:
     app = create_app(
         RuntimeConfig(
             bind_address="127.0.0.1",
@@ -145,10 +151,12 @@ async def _compute(project: Path, workspace: Path) -> tuple[dict, PublishedModel
     ) as client:
         response = await client.post("/compute", json=request)
     assert response.status_code == 200, response.text
-    return response.json(), validator
+    return response.json()
 
 
-def test_pv_fixture_with_bundled_background(tmp_path: Path) -> None:
+def test_pv_fixture_with_bundled_background(
+    tmp_path: Path, published_validator: PublishedModelValidator
+) -> None:
     destination = tmp_path / "projects"
     _run_background_step(
         "prepare_background",
@@ -167,7 +175,7 @@ def test_pv_fixture_with_bundled_background(tmp_path: Path) -> None:
         before = hashlib.file_digest(stream, "sha256").hexdigest()
 
     workspace = tmp_path / "request-workspace"
-    result, validator = asyncio.run(_compute(project, workspace))
+    result = asyncio.run(_compute(project, workspace, published_validator))
     indicator = result["lca_analysis_instances"][0]["assessment_results"]["assessment_indicators"][0]
     assert indicator["indicator_identifier"] == " / ".join(METHOD)
     assert indicator["indicator_result"]["numeric_value"] == pytest.approx(EXPECTED_SCORE, abs=0.001)
@@ -182,14 +190,18 @@ def test_pv_fixture_with_bundled_background(tmp_path: Path) -> None:
     assert result["lca_analysis_instances"][0]["assessment_inputs"]["input_references"][-1][
         "source_artifact_uri"
     ] == "https://doi.org/10.5281/zenodo.15421526"
-    assert validator.validated_families == ["product-system", "lci-dataset", "integrated-lca"]
+    assert published_validator.validated_families == [
+        "product-system", "lci-dataset", "integrated-lca"
+    ]
     assert list((workspace / "requests").iterdir()) == []
     with (project / "lci" / "databases.db").open("rb") as stream:
         assert hashlib.file_digest(stream, "sha256").hexdigest() == before
 
 
-def test_pv_records_against_published_models() -> None:
-    validator = PublishedModelValidator()
+def test_pv_records_against_published_models(
+    published_validator: PublishedModelValidator,
+) -> None:
+    validator = published_validator
     system = json.loads((FIXTURE / "product-system.json").read_text())
     dataset = json.loads((FIXTURE / "lci-dataset.json").read_text())
     impact = ForegroundImpact(

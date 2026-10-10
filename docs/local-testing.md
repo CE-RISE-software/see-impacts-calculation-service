@@ -21,9 +21,9 @@ python3 -m venv .venv
 The suite builds a fresh Brightway project from the bundled seed and BONSAI IO release, then
 sends the PV fixture to `POST /compute`. It fetches the latest published Product System, LCI
 Dataset, and Integrated LCA schemas from Codeberg to validate the inputs and result. The same
-suite checks concurrent requests with a synthetic background. No prebuilt project, live HEX
-Core, or opt-in flag is required. Codeberg runs it on `codeberg-medium` for pushes, pull
-requests, and releases.
+suite checks concurrent requests with a synthetic background. No manually prepared background
+project, live HEX Core, or opt-in flag is required. Codeberg runs core and PV tests as separate
+`codeberg-medium` jobs for pushes, pull requests, and releases.
 
 ## Local Background
 

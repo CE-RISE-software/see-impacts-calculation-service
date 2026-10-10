@@ -6,7 +6,7 @@ on:
             - "v*.*.*"
 
 jobs:
-    test:
+    core-tests:
         runs-on: codeberg-medium
 
         steps:
@@ -21,13 +21,32 @@ jobs:
             - name: Install dependencies
               run: python -m pip install --no-cache-dir -r requirements-test.txt
 
-            - name: Run tests
-              run: python -m pytest -q
+            - name: Run core tests
+              run: python -m pytest -q --ignore=tests/test_pv_integration.py
+
+    pv-integration:
+        runs-on: codeberg-medium
+
+        steps:
+            - name: Checkout
+              uses: https://github.com/actions/checkout@v4
+
+            - name: Set up Python
+              uses: https://github.com/actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+
+            - name: Install dependencies
+              run: python -m pip install --no-cache-dir -r requirements-test.txt
+
+            - name: Run PV integration tests
+              run: python -m pytest -q tests/test_pv_integration.py
 
     docker-build-and-push:
         runs-on: codeberg-medium
         needs:
-            - test
+            - core-tests
+            - pv-integration
         container:
             image: gcr.io/kaniko-project/executor:debug
         steps:
