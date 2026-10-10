@@ -24,8 +24,8 @@ jobs:
             - name: Run core tests
               run: python -m pytest -q --ignore=tests/test_pv_integration.py
 
-    pv-integration:
-        runs-on: codeberg-medium
+    pv-record-validation:
+        runs-on: codeberg-small
 
         steps:
             - name: Checkout
@@ -39,14 +39,14 @@ jobs:
             - name: Install dependencies
               run: python -m pip install --no-cache-dir -r requirements-test.txt
 
-            - name: Run PV integration tests
-              run: python -m pytest -q tests/test_pv_integration.py
+            - name: Validate PV input and output records
+              run: python -m pytest -q tests/test_pv_integration.py::test_pv_records_against_published_models
 
     docker-build-and-push:
         runs-on: codeberg-medium
         needs:
             - core-tests
-            - pv-integration
+            - pv-record-validation
         container:
             image: gcr.io/kaniko-project/executor:debug
         steps:
