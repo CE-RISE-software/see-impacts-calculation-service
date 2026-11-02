@@ -1,6 +1,6 @@
 {
   "title": "CE-RISE SEE Impacts Calculation Service",
-  "description": "A CE-RISE containerized service that calculates environmental impact indicators from Product System and LCI Dataset inputs using a configured Brightway background, validates Integrated LCA results through HEX Core, and reports request-specific calculation diagnostics.",
+  "description": "A containerized CE-RISE service for calculating environmental impacts using BONSAI and fixed EF3.1 factors. It validates Product System and LCI Dataset inputs and Integrated LCA results through HEX Core, with isolated calculations and diagnostics.",
   "license": "EUPL-1.2",
   "upload_type": "software",
   "creators": [
@@ -39,7 +39,7 @@
     "Digital Product Passport",
     "Digital Material Passport"
   ],
-  "notes": "Software source is licensed EUPL-1.2. Bundled BONSAI background files are licensed CC BY-SA 4.0 and originate from https://doi.org/10.5281/zenodo.15421526.",
+  "notes": "Source code: EUPL-1.2. BONSAI background: CC BY-SA 4.0. Background and EF3.1 configuration provenance: data/background/project.json.",
   "communities": [
     { "identifier": "ce-rise" },
     { "identifier": "impact" }

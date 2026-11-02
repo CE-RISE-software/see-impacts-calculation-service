@@ -33,8 +33,8 @@ class RuntimeConfig:
     background_project_name: str
     brightway_workspace_dir: Path
     hex_core_bearer_token: str | None = None
-    background_database_name: str = "bonsai"
-    biosphere_database_name: str = "biosphere3"
+    background_database_name: str = "BONSAI"
+    biosphere_database_name: str = "ef31_biosphere"
     calculation_timeout_secs: int = 900
     max_concurrent_calculations: int = 2
 
@@ -60,8 +60,8 @@ class RuntimeConfig:
                 _read_string("BRIGHTWAY_WORKSPACE_DIR", "runtime/brightway")
             ).resolve(),
             hex_core_bearer_token=os.environ.get("HEX_CORE_BEARER_TOKEN") or None,
-            background_database_name=_read_string("BACKGROUND_DATABASE_NAME", "bonsai"),
-            biosphere_database_name=_read_string("BIOSPHERE_DATABASE_NAME", "biosphere3"),
+            background_database_name=_read_string("BACKGROUND_DATABASE_NAME", "BONSAI"),
+            biosphere_database_name=_read_string("BIOSPHERE_DATABASE_NAME", "ef31_biosphere"),
             calculation_timeout_secs=_read_int("CALCULATION_TIMEOUT_SECS", 900),
             max_concurrent_calculations=_read_int("MAX_CONCURRENT_CALCULATIONS", 2),
         )

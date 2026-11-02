@@ -10,29 +10,25 @@ RUN useradd --create-home --shell /usr/sbin/nologin appuser \
     && mkdir -p /var/lib/see-impacts/brightway \
     && chown -R appuser:appuser /var/lib/see-impacts
 
-COPY pyproject.toml README.md LICENSE requirements-background-build.txt ./
+COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
 COPY data/background/cerise_bonsai.tar.gz ./data/background/
-COPY data/background/bonsai-3.8-beta2 ./data/background/bonsai-3.8-beta2
 
 RUN pip install --no-cache-dir . \
-    && pip install --no-cache-dir -r requirements-background-build.txt \
     && python -m see_impacts_calculation_service.prepare_background \
         data/background/cerise_bonsai.tar.gz data/background/projects \
-        --project-name cerise_bonsai \
-    && python -m see_impacts_calculation_service.import_bonsai \
-        data/background/bonsai-3.8-beta2 \
-        data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
         --project-name cerise_bonsai \
     && python -m see_impacts_calculation_service.compatibility \
         --project-dir data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
         --project-name cerise_bonsai \
         --workspace-dir /tmp/see-impacts-build-probe \
     && chmod -R a-w data/background/projects \
-    && rm -rf data/background/cerise_bonsai.tar.gz data/background/bonsai-3.8-beta2 \
+    && rm -rf data/background/cerise_bonsai.tar.gz \
         /tmp/see-impacts-build-probe
 
 RUN chmod -R a+rX data/background/projects
+
+COPY data/background/project.json data/background/README.md ./data/background/
 
 EXPOSE 8080
 

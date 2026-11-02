@@ -45,7 +45,8 @@ This is method discovery, not a guarantee that a particular request can be solve
 
 The response contains `project_name`, `method_count`, and `methods`. Each entry in `methods`
 is an array of strings. The PV example uses the registered identifier
-`["EF v3.1", "climate change", "global warming potential (GWP100)"]`.
+`["EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)"]`.
+The bundled project supplies 25 fixed EF3.1 method entries.
 An unavailable project returns `503 BRIGHTWAY_PROJECT_UNAVAILABLE`.
 
 If the project cannot be opened, the endpoint returns `503`:
@@ -93,8 +94,8 @@ result:
       "study_metadata": {
         "assessment_dimensions": ["ENVIRONMENTAL"],
         "database_info": {
-          "background_database": "bonsai",
-          "database_version": "3.8-beta2 (bw)"
+          "background_database": "BONSAI",
+          "database_version": "BONSAI-EF3.1 snapshot 2026-10-08"
         },
         "software_info": {
           "software_name": "see-impacts-calculation-service",
@@ -117,19 +118,19 @@ result:
         "input_references": [
           {"input_role": "PRODUCT_SYSTEM", "source_model_identifier": "product-system", "source_model_version": "0.0.1", "source_record_identifier": "pv-panel"},
           {"input_role": "FOREGROUND_INVENTORY", "source_model_identifier": "lci-dataset", "source_model_version": "0.0.1", "source_record_identifier": "pv-panel-inventory", "source_record_version": "1"},
-          {"input_role": "BACKGROUND_INVENTORY", "source_model_identifier": "brightway-project", "source_record_identifier": "cerise_bonsai", "source_artifact_uri": "https://doi.org/10.5281/zenodo.15421526"}
+          {"input_role": "BACKGROUND_INVENTORY", "source_model_identifier": "brightway-project", "source_record_identifier": "cerise_bonsai", "source_artifact_uri": "urn:sha256:339e6e3199bd13c7ab5f1948bfd9626f033668dac4bfad4705d17d8c52993a0b"}
         ]
       },
       "assessment_results": {
         "assessment_indicators": [
           {
             "assessment_dimension": "ENVIRONMENTAL",
-            "indicator_identifier": "EF v3.1 / climate change / global warming potential (GWP100)",
-            "indicator_name": "global warming potential (GWP100)",
-            "assessment_method": "EF v3.1 / climate change / global warming potential (GWP100)",
-            "indicator_result": {"numeric_value": 109.927731, "unit": "kg CO2-Eq"},
-            "method_version": "v3.1",
-            "calculation_model_or_factor_set_reference": "ef-v31cg.1c397559135d78f19a1915a0ca4f626a"
+            "indicator_identifier": "EF 3.1 / Climate change / Radiative forcing as Global Warming Potential (GWP100)",
+            "indicator_name": "Radiative forcing as Global Warming Potential (GWP100)",
+            "assessment_method": "EF 3.1 / Climate change / Radiative forcing as Global Warming Potential (GWP100)",
+            "indicator_result": {"numeric_value": 145.817516, "unit": "kg CO2-Eq"},
+            "method_version": "01.00.000",
+            "calculation_model_or_factor_set_reference": "ef-31cr.54f4488dea758642f545ebdab88aaca5"
           }
         ]
       }
@@ -139,9 +140,12 @@ result:
 ```
 
 The method version comes from registered metadata or an explicit version in the method name.
+For the bundled EF3.1 family, a value such as `01.00.000` identifies the individual method
+dataset's version. It is separate from the EF3.1 family name and from the CE-RISE schema versions
+in `model_versions`.
 The factor-set reference is Brightway's identifier within the project, not a citation for the
-method's source publication. The DOI identifies the BONSAI source release, not the generated
-Brightway project. Fields without a documented value are omitted. The endpoint does not persist
+method's source publication. The background artifact URI identifies the supplied source archive
+by its SHA-256 checksum. Fields without a documented value are omitted. The endpoint does not persist
 foreground records or modify the prepared background.
 
 ### Validation Errors
@@ -177,7 +181,7 @@ For the PV request in the Compute Workflow, the calculation completes and diagno
       "quantity": 1.0,
       "unit": "m^2"
     },
-    "impact_method": ["EF v3.1", "climate change", "global warming potential (GWP100)"]
+    "impact_method": ["EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)"]
   },
   "diagnostic": null
 }

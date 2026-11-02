@@ -33,6 +33,16 @@ configured biosphere database. The service converts compatible flow units and re
 or incompatible links. The bundled BONSAI background is prepared by the image build or local
 setup; it is not included in the request.
 
+In the bundled project, external activities resolve in `BONSAI` and elementary flows resolve in
+`ef31_biosphere`. The 25 registered EF3.1 method entries use the fixed factors and flow links
+supplied with that project. Select a method from `GET /methods`; no characterization-factor
+table or matching script is submitted with the request.
+
+The calculation applies the method's global factors. Elementary flows that resolve in the
+biosphere database but have no matching factor contribute zero to the selected indicator;
+unresolved identifiers are errors. See [Characterization and Results](scope.md#characterization-and-results)
+for geographic treatment and reproducibility.
+
 ## Send a Request
 
 1. Start the service with `HEX_CORE_BASE_URL` pointing to a reachable HEX Core that has the
@@ -62,7 +72,7 @@ jq -n \
       quantity: 1.0,
       unit: $system[0].reference_flow_specification.reference_flow_unit_reference
     },
-    impact_method: ["EF v3.1", "climate change", "global warming potential (GWP100)"]
+    impact_method: ["EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)"]
   }' > compute-request.json
 
 curl --fail-with-body --silent --show-error \
@@ -72,7 +82,7 @@ curl --fail-with-body --silent --show-error \
 ```
 
 For this fixture and bundled background, the climate-change indicator is approximately
-`109.927731 kg CO2-Eq` for `1 m^2` of the declared reference flow. The local full PV test checks
+`145.817516 kg CO2-Eq` for `1 m^2` of the declared reference flow. The local full PV test checks
 this result and validates both input records and the output against published model schemas.
 
 ## Read the Response

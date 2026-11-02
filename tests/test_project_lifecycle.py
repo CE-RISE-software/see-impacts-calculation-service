@@ -18,6 +18,10 @@ from see_impacts_calculation_service.project_lifecycle import (
 def test_worker_stderr_is_logged_but_not_returned(
     tmp_path, monkeypatch, caplog, returncode, stdout
 ):
+    monkeypatch.delenv("OPENBLAS_NUM_THREADS", raising=False)
+    monkeypatch.delenv("OMP_NUM_THREADS", raising=False)
+    monkeypatch.setenv("MKL_NUM_THREADS", "3")
+
     class FailedProcess:
         def __init__(self):
             self.returncode = returncode
@@ -26,6 +30,9 @@ def test_worker_stderr_is_logged_but_not_returned(
             return stdout, b"Traceback: worker import failed\n"
 
     async def start_worker(*args, **kwargs):
+        assert kwargs["env"]["OPENBLAS_NUM_THREADS"] == "1"
+        assert kwargs["env"]["OMP_NUM_THREADS"] == "1"
+        assert kwargs["env"]["MKL_NUM_THREADS"] == "3"
         return FailedProcess()
 
     monkeypatch.setattr(

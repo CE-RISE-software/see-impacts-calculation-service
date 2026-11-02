@@ -67,8 +67,8 @@ def prepare_background(
     destination: Path,
     project_name: str,
     *,
-    background_database_name: str = "bonsai",
-    biosphere_database_name: str = "biosphere3",
+    background_database_name: str = "BONSAI",
+    biosphere_database_name: str = "ef31_biosphere",
 ) -> Path:
     """Extract, probe, and publish a project without leaving partial output."""
 
@@ -118,8 +118,8 @@ def main() -> int:
     parser.add_argument("archive", type=Path)
     parser.add_argument("destination", type=Path)
     parser.add_argument("--project-name", required=True)
-    parser.add_argument("--background-database", default="bonsai")
-    parser.add_argument("--biosphere-database", default="biosphere3")
+    parser.add_argument("--background-database", default="BONSAI")
+    parser.add_argument("--biosphere-database", default="ef31_biosphere")
     args = parser.parse_args()
     try:
         print(

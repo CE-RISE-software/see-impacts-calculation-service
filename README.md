@@ -2,7 +2,8 @@
 
 A containerized HTTP service that calculates one environmental impact indicator for a CE-RISE
 Product System. It combines the supplied LCI Dataset foreground with the configured BONSAI
-background, then returns a validated Integrated LCA result or a calculation diagnostic.
+background and its fixed Environmental Footprint (EF) 3.1 characterization factors, then returns
+a validated Integrated LCA result or a calculation diagnostic.
 
 For the CE-RISE solution and its components, use the
 [CE-RISE Solution portal](https://solution.ce-rise.eu/) as the main entry point for human users.
@@ -24,6 +25,18 @@ must exist in those records, and the reference flow must have the same identifie
 unit in the Product System and its LCI Dataset. Background activity and elementary-flow links
 must resolve in the configured Brightway project. Callers do not upload a Brightway project or
 submit a separate mapping file.
+
+The bundled project provides 25 EF3.1 method entries, including impact categories and their
+subcategories. Select one per request. Characterization factors and their elementary-flow
+links are part of the fixed project configuration and apply to all products; they are not
+uploaded with a calculation request.
+
+Inputs must use the bundled project's BONSAI activity codes and EF elementary-flow identifiers.
+Characterization uses the selected method's global factors. A resolved elementary flow without
+a matching factor contributes zero to that indicator. For comparisons between alternatives,
+align the functional unit and study boundaries and use the same background and method setup.
+See [Characterization and Results](docs/scope.md#characterization-and-results) for the factor
+coverage, geographic treatment, and information needed to reproduce a result.
 
 On success, the response is one Integrated LCA object with one environmental indicator. It
 contains the requested functional unit, the numeric result and unit, the selected method, input
@@ -78,15 +91,11 @@ python3 -m venv .venv
 .venv/bin/python -m pytest
 ```
 
-To run the HTTP service locally, prepare the Brightway project from the bundled seed and
-BONSAI IO release:
+To run the HTTP service locally, extract and verify the bundled BONSAI-EF3.1 project:
 
 ```bash
-mkdir -p data/background/projects
-tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
-.venv/bin/python -m see_impacts_calculation_service.import_bonsai \
-  data/background/bonsai-3.8-beta2 \
-  data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
+.venv/bin/python -m see_impacts_calculation_service.prepare_background \
+  data/background/cerise_bonsai.tar.gz data/background/projects \
   --project-name cerise_bonsai
 .venv/bin/see-impacts-compatibility
 ```
@@ -132,14 +141,15 @@ The published Pages site contains endpoint, deployment, and local-testing detail
 
 ## Background Data
 
-The repository includes a seed Brightway project with biosphere flows and impact methods,
-plus the six-file [BONSAI 3.8-beta2 (bw) IO release](https://doi.org/10.5281/zenodo.15421526).
-The build imports that release as the `bonsai` database. The default Brightway project is
+The repository includes the BONSAI-EF3.1 Brightway project supplied by the service's coauthors,
+with 49,978 BONSAI activities, 93,993 EF elementary flows, and 25 registered EF3.1 method
+entries. The `BONSAI` background, EF flow identifiers, characterization factors, and their
+links are prepared together. The default Brightway project is
 `data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`.
 The expanded local project remains untracked. Use a distinct writable
 `BRIGHTWAY_WORKSPACE_DIR` for Brightway state. See
-[Background Data](data/background/README.md) for checksums and attribution. The pinned IO
-release is published under CC BY-SA 4.0; the computing module's source code is licensed
+[Background Data](data/background/README.md) for checksums, source identification, and attribution.
+The BONSAI background is licensed CC BY-SA 4.0; the computing module's source code is licensed
 separately under EUPL-1.2.
 
 ## Container Releases

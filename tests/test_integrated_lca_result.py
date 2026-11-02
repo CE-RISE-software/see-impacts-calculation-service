@@ -53,15 +53,17 @@ def test_result_reports_available_method_and_background_metadata():
         reference_flow_identifier="flow-1",
         functional_unit_quantity=1.0,
         functional_unit_unit="m^2",
-        method=("EF v3.1", "climate change", "global warming potential (GWP100)"),
-        score=109.927731,
+        method=("EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)"),
+        score=145.817516,
         score_unit="kg CO2-Eq",
         bw2data_version="4.7",
         bw2calc_version="2.5.0",
-        method_version="v3.1",
-        factor_set_reference="ef-v31cg.1c397559135d78f19a1915a0ca4f626a",
-        background_database_version="3.8-beta2 (bw)",
-        background_source_artifact_uri="https://doi.org/10.5281/zenodo.15421526",
+        method_version="01.00.000",
+        factor_set_reference="ef-31cr.54f4488dea758642f545ebdab88aaca5",
+        background_database_version="BONSAI-EF3.1 snapshot 2026-10-08",
+        background_source_artifact_uri=(
+            "urn:sha256:339e6e3199bd13c7ab5f1948bfd9626f033668dac4bfad4705d17d8c52993a0b"
+        ),
         calculation_timestamp="2026-10-10T12:00:00+00:00",
     )
     result = build_integrated_lca_result(
@@ -71,26 +73,26 @@ def test_result_reports_available_method_and_background_metadata():
         product_system={"lci_dataset_references": [{"lci_dataset_identifier": "used"}]},
         lci_datasets=[{"lci_dataset_identifier": "used"}],
         background_project_name="cerise_bonsai",
-        background_database_name="bonsai",
+        background_database_name="BONSAI",
         software_version="0.0.1",
     )
 
     instance = result["lca_analysis_instances"][0]
     assert instance["study_metadata"]["database_info"] == {
-        "background_database": "bonsai",
-        "database_version": "3.8-beta2 (bw)",
+        "background_database": "BONSAI",
+        "database_version": "BONSAI-EF3.1 snapshot 2026-10-08",
     }
     assert instance["assessment_inputs"]["input_references"][-1]["source_artifact_uri"] == (
-        "https://doi.org/10.5281/zenodo.15421526"
+        "urn:sha256:339e6e3199bd13c7ab5f1948bfd9626f033668dac4bfad4705d17d8c52993a0b"
     )
     assert instance["study_metadata"]["software_info"]["calculation_timestamp"] == (
         "2026-10-10T12:00:00+00:00"
     )
     indicator = instance["assessment_results"]["assessment_indicators"][0]
     assert indicator["assessment_method"] == (
-        "EF v3.1 / climate change / global warming potential (GWP100)"
+        "EF 3.1 / Climate change / Radiative forcing as Global Warming Potential (GWP100)"
     )
-    assert indicator["method_version"] == "v3.1"
+    assert indicator["method_version"] == "01.00.000"
     assert indicator["calculation_model_or_factor_set_reference"] == (
-        "ef-v31cg.1c397559135d78f19a1915a0ca4f626a"
+        "ef-31cr.54f4488dea758642f545ebdab88aaca5"
     )

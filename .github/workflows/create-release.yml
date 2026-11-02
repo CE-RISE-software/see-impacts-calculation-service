@@ -8,7 +8,6 @@ on:
 
 env:
   PROJECT_NAME: CE-RISE SEE Impacts Calculation Service
-  PRIMARY_REPO_URL: https://codeberg.org/CE-RISE-software/see-impacts-calculation-service
 
 jobs:
   create-release:
@@ -40,39 +39,38 @@ jobs:
       - name: Generate Release Notes
         id: notes
         if: steps.check_release.outputs.EXISTS == 'false'
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.TAG_NAME }}
         run: |
-          cat << EOF > release_notes.md
-          ## ${PROJECT_NAME} ${{ steps.tag.outputs.TAG_NAME }}
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
 
-          This release is automatically mirrored from the primary repository on Codeberg: ${PRIMARY_REPO_URL}
-
-          ### Overview
-
-          This tag contains a versioned release of the CE-RISE software components.
-          It is intended to keep GitHub releases aligned with Codeberg tags for downstream automation and archival.
-
-          ### Release Assets
-
-          If configured in CI/CD, this release may be accompanied by:
-          - container images (version tag and commit SHA tags),
-          - OpenAPI artifacts,
-          - generated SDK packages.
-
-          ### Documentation
-
-          Project documentation and operational guidance are published from the primary repository.
-
-          ---
-
-          **Note**: This repository is a mirror. For issues, pull requests, and canonical release notes, use the main Codeberg repository (${PRIMARY_REPO_URL}).
-          EOF
+          version = os.environ["RELEASE_TAG"].removeprefix("v")
+          lines = Path("CHANGELOG.md").read_text(encoding="utf-8").splitlines()
+          heading = f"## [{version}]"
+          start = next(
+              (index + 1 for index, line in enumerate(lines) if line == heading or line.startswith(heading + " - ")),
+              None,
+          )
+          if start is None:
+              raise SystemExit(f"No changelog entry for {version}")
+          end = next(
+              (index for index in range(start, len(lines)) if lines[index].startswith("## ")),
+              len(lines),
+          )
+          notes = "\n".join(lines[start:end]).strip()
+          if not notes:
+              raise SystemExit(f"Empty changelog entry for {version}")
+          Path("release_notes.md").write_text(notes + "\n", encoding="utf-8")
+          PY
 
       - name: Create GitHub Release
         if: steps.check_release.outputs.EXISTS == 'false'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.TAG_NAME }}
-          name: Release ${{ steps.tag.outputs.TAG_NAME }}
+          name: ${{ env.PROJECT_NAME }} ${{ steps.tag.outputs.TAG_NAME }}
           body_path: release_notes.md
           draft: false
           prerelease: ${{ contains(steps.tag.outputs.TAG_NAME, '-') }}

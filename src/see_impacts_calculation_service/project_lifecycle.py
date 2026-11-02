@@ -102,6 +102,9 @@ async def calculate_isolated_foreground(
     requests_dir.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
     environment.pop("BRIGHTWAY2_DIR", None)
+    # Avoid multiplying BLAS threads across concurrent request workers.
+    for variable in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+        environment.setdefault(variable, "1")
     with TemporaryDirectory(prefix="compute-", dir=requests_dir) as temporary:
         payload = {
             "assembly": asdict(assembly),

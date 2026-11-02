@@ -1,4 +1,5 @@
 cff-version: 1.2.0
+message: Environmental footprint calculations with BONSAI and EF3.1.
 title: CE-RISE SEE Impacts Calculation Service
 type: software
 authors:
@@ -30,9 +31,9 @@ authors:
 repository-code: 'https://codeberg.org/CE-RISE-software/see-impacts-calculation-service'
 url: 'https://ce-rise-software.codeberg.page/see-impacts-calculation-service/'
 abstract: >-
-  A CE-RISE containerized service that calculates environmental impact indicators from Product
-  System and LCI Dataset inputs using a configured Brightway background, validates Integrated
-  LCA results through HEX Core, and reports request-specific calculation diagnostics.
+  A containerized CE-RISE service for calculating environmental impacts using BONSAI and fixed
+  EF3.1 factors. It validates Product System and LCI Dataset inputs and Integrated LCA results
+  through HEX Core, with isolated calculations and diagnostics.
 keywords:
   - CE-RISE
   - Open Source

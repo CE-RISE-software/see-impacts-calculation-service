@@ -2,9 +2,10 @@
 
 ## Service Form
 
-This project is deployed as a containerized HTTP service. The `Dockerfile` extracts the seed
-Brightway project, imports the bundled BONSAI 3.8-beta2 IO release into it, and verifies that
-Brightway can read the result. A failed import or verification stops the image build.
+This project is deployed as a containerized HTTP service. The `Dockerfile` extracts the bundled
+BONSAI-EF3.1 Brightway project and verifies that Brightway can read its databases and methods.
+A failed verification stops the image build. The background and characterization factors are
+already linked in the archive; no separate IO importer is installed or run.
 
 ## Image Publication
 
@@ -48,8 +49,8 @@ The service accepts the following environment variables:
 - `BACKGROUND_PROJECT_NAME`: expected project name from `.project-name.json`; default
   `cerise_bonsai`;
 - `BACKGROUND_DATABASE_NAME`: Brightway database used for external technosphere links;
-  default `bonsai`;
-- `BIOSPHERE_DATABASE_NAME`: Brightway database used for elementary flows; default `biosphere3`;
+  default `BONSAI`;
+- `BIOSPHERE_DATABASE_NAME`: Brightway database used for elementary flows; default `ef31_biosphere`;
 - `BRIGHTWAY_WORKSPACE_DIR`: writable Brightway registry workspace; default
   `runtime/brightway` locally and `/var/lib/see-impacts/brightway` in the container image.
 - `CALCULATION_TIMEOUT_SECS`: maximum time for one isolated calculation; default `900`.
@@ -64,19 +65,22 @@ The bearer token is never returned by `GET /health`.
 
 ## Background Data
 
-The image contains a prepared BONSAI 3.8-beta2 Brightway project and treats it as
+The image contains the coauthors' general BONSAI-EF3.1 Brightway project and treats it as
 immutable. Each compute request creates a temporary project copy under
 `BRIGHTWAY_WORKSPACE_DIR/requests`, calculates in a separate process, and removes the copy after
 completion or timeout. The workspace must be writable and must not be inside the background
-source directory. The build uses the pinned
-[BONSAI Brightway importer](https://github.com/mfastudillo/brightway2-io/blob/9f62977cf83ffa45453f410a3bdbc19f38b03811/bw2io/importers/bonsai.py)
-and the [public IO release](https://doi.org/10.5281/zenodo.15421526). The six source files
-are not carried into the runtime image.
+source directory. The fixed base has 49,978 BONSAI activities, the EF3.1 elementary-flow
+database, and 25 registered EF3.1 method entries. The example's standalone test activity is
+excluded. Each request supplies its own CE-RISE foreground; the base is independent of product
+type. The source archive and matrix checksums are recorded in the
+[background manifest](https://codeberg.org/CE-RISE-software/see-impacts-calculation-service/src/branch/main/data/background/project.json).
 
-This IO release is licensed CC BY-SA 4.0. The computing module's source code has a separate
-EUPL-1.2 license. Attribute the BONSAI release when redistributing the image.
+The BONSAI background is licensed CC BY-SA 4.0. The computing module's source code has a separate
+EUPL-1.2 license. Retain the BONSAI attribution when redistributing the image.
 
 Concurrent compute requests have separate Brightway processes and request workspaces.
+Workers default to one BLAS thread to avoid multiplying numerical-library threads across
+concurrent calculations; explicit numerical-library thread settings in the environment are retained.
 
 ## Run Example
 

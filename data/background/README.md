@@ -1,20 +1,38 @@
-# BONSAI Background
+# BONSAI-EF3.1 Background
 
-`cerise_bonsai.tar.gz` is the seed Brightway project containing `biosphere3` and registered
-impact methods. It expands to
-`projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`.
+`cerise_bonsai.tar.gz` contains the general BONSAI-EF3.1 Brightway project supplied by the
+service coauthors. It expands to
+`projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9` and includes:
 
-SHA-256: `58afc02d88e3ad47334c210bbeacdaa3f950954338629af7a857f34909f1fe1f`
+- `BONSAI`: 49,978 background activities;
+- `ef31_biosphere`: 93,993 Environmental Footprint elementary flows;
+- `BONSAI biosphere`: seven additional background flows;
+- 25 registered EF3.1 method entries, including categories and subcategories, with their
+  characterization factors and geographic identifiers.
 
-`bonsai-3.8-beta2/` contains the six published files from
-[EXIOBASE-hybrid - Consequential System, version 3.8-beta2 (bw)](https://doi.org/10.5281/zenodo.15421526).
-The image build verifies their SHA-256 hashes, imports them as the `bonsai` database using the
-commit pinned in `requirements-background-build.txt`, and removes the source files from the
-runtime image. The importer aliases the published `index_table_hiot.gzip` to the filename it
-expects; no source table is modified. The import follows the
-[published Brightway example](https://github.com/Depart-de-Sentier/brightcon-2024-material/blob/main/talks/Wednesday/io_bonsai_importer/io_bonsai_import.ipynb).
-The prepared project has 34,567 BONSAI activities.
+The archive is independent of product type. Foreground activities come from each calculation
+request. The source project's standalone `test_activities` database and its user-interface
+caches are excluded. All background and characterization datapackages are preserved byte for
+byte. Intermediate method records are restored from those datapackages so Brightway can also
+load and inspect the factors. Two reversed result-unit labels are corrected: fossil resource
+use is `MJ`; mineral and metal resource use is `kg Sb-Eq`.
 
-The Zenodo release is licensed CC BY-SA 4.0. Attribute its creators and release when
-redistributing the data or image. The computing module's source code is licensed separately
-under EUPL-1.2; that software license does not replace the data license.
+[project.json](project.json) records the source filename, source and bundled archive SHA-256
+checksums, database counts, all method identifiers, and original matrix checksums. The source
+is `BONSAI_EF3.1_Brightway25_Project.gz`, SHA-256
+`339e6e3199bd13c7ab5f1948bfd9626f033668dac4bfad4705d17d8c52993a0b`.
+
+The build extracts and verifies this linked project directly. It does not re-import a different
+BONSAI release or reconstruct the elementary-flow matching. Each request uses a disposable copy
+of the prepared project, with its own foreground. Factor tables are fixed service configuration.
+
+Calculations use the selected method's global factors through Brightway's standard LCIA path.
+The regional factor records remain in the archive. Runtime geographic treatment and factor
+coverage are described under
+[Characterization and Results](../../docs/scope.md#characterization-and-results).
+
+BONSAI background data retain their CC BY-SA 4.0 license. Attribute the BONSAI data creators and
+the CE-RISE contributors to the supplied configuration when redistributing the archive or image.
+The method is the European Commission/JRC
+[Environmental Footprint 3.1](https://eplca.jrc.ec.europa.eu/LCDN/developerEF.html).
+The service source is licensed separately under EUPL-1.2.

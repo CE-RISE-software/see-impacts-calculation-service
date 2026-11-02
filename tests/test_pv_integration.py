@@ -27,8 +27,9 @@ from see_impacts_calculation_service.integrated_lca_result import build_integrat
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/pv"
 BACKGROUND = ROOT / "data/background"
-METHOD = ("EF v3.1", "climate change", "global warming potential (GWP100)")
-EXPECTED_SCORE = 109.92773114868947
+METHOD = ("EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)")
+EXPECTED_SCORE = 145.81751590492595
+BACKGROUND_METADATA = json.loads((BACKGROUND / "project.json").read_text())
 MODEL_CLASSES = {
     "product-system": "ProductSystem",
     "lci-dataset": "LCIDataset",
@@ -124,8 +125,8 @@ async def _compute(
             background_project_dir=project,
             background_project_name="cerise_bonsai",
             brightway_workspace_dir=workspace,
-            background_database_name="bonsai",
-            biosphere_database_name="biosphere3",
+            background_database_name="BONSAI",
+            biosphere_database_name="ef31_biosphere",
         ),
         hex_core_client=validator,
     )
@@ -165,12 +166,6 @@ def test_pv_fixture_with_bundled_background(
         "--project-name", "cerise_bonsai",
     )
     project = destination / "cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9"
-    _run_background_step(
-        "import_bonsai",
-        str(BACKGROUND / "bonsai-3.8-beta2"),
-        str(project),
-        "--project-name", "cerise_bonsai",
-    )
     with (project / "lci" / "databases.db").open("rb") as stream:
         before = hashlib.file_digest(stream, "sha256").hexdigest()
 
@@ -180,16 +175,16 @@ def test_pv_fixture_with_bundled_background(
     assert indicator["indicator_identifier"] == " / ".join(METHOD)
     assert indicator["indicator_result"]["numeric_value"] == pytest.approx(EXPECTED_SCORE, abs=0.001)
     assert indicator["indicator_result"]["unit"] == "kg CO2-Eq"
-    assert indicator["method_version"] == "v3.1"
+    assert indicator["method_version"] == "01.00.000"
     assert indicator["calculation_model_or_factor_set_reference"] == (
-        "ef-v31cg.1c397559135d78f19a1915a0ca4f626a"
+        "ef-31cr.54f4488dea758642f545ebdab88aaca5"
     )
     metadata = result["lca_analysis_instances"][0]["study_metadata"]
-    assert metadata["database_info"]["database_version"] == "3.8-beta2 (bw)"
+    assert metadata["database_info"]["database_version"] == BACKGROUND_METADATA["source_version"]
     assert datetime.fromisoformat(metadata["software_info"]["calculation_timestamp"]).tzinfo
     assert result["lca_analysis_instances"][0]["assessment_inputs"]["input_references"][-1][
         "source_artifact_uri"
-    ] == "https://doi.org/10.5281/zenodo.15421526"
+    ] == BACKGROUND_METADATA["source_artifact_uri"]
     assert published_validator.validated_families == [
         "product-system", "lci-dataset", "integrated-lca"
     ]
@@ -214,6 +209,10 @@ def test_pv_records_against_published_models(
         score_unit="kg CO2-Eq",
         bw2data_version="4.7",
         bw2calc_version="2.5.0",
+        method_version="01.00.000",
+        factor_set_reference="ef-31cr.54f4488dea758642f545ebdab88aaca5",
+        background_database_version=BACKGROUND_METADATA["source_version"],
+        background_source_artifact_uri=BACKGROUND_METADATA["source_artifact_uri"],
     )
     result = build_integrated_lca_result(
         impact,
@@ -222,7 +221,7 @@ def test_pv_records_against_published_models(
         product_system=system,
         lci_datasets=[dataset],
         background_project_name="cerise_bonsai",
-        background_database_name="bonsai",
+        background_database_name="BONSAI",
         software_version="0.0.1",
     )
     records = {

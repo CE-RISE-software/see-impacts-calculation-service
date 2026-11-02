@@ -19,6 +19,19 @@ def test_converts_cubic_meter_to_brightway_m3_unit():
     assert _converted_amount(2.0, "m^3", "m3", "water") == 2.0
 
 
+@pytest.mark.parametrize(
+    ("source", "target"),
+    [
+        ("m^2", "m2"),
+        ("m^2 * year", "m2*a"),
+        ("m2*a", "m^2 * year"),
+        ("m^3 * year", "m3*a"),
+    ],
+)
+def test_converts_ef31_area_and_land_occupation_units(source, target):
+    assert _converted_amount(2.0, source, target, "land") == 2.0
+
+
 def test_method_version_uses_metadata_or_explicit_registered_label():
     assert _method_version(("EF v3.1", "climate change"), {}) == "v3.1"
     assert _method_version(("CML v4.8 2016", "climate change"), {}) == "v4.8 2016"

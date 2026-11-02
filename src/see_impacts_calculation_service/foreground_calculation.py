@@ -6,13 +6,14 @@ import re
 import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import partial
 from math import isfinite
 from pathlib import Path
 from typing import Any
 
 import pint
 from bw_processing.matrix_entry import MatrixEntry, MatrixName, create_datapackage_from_entries
-from scipy.sparse.linalg import MatrixRankWarning
+from scipy.sparse.linalg import MatrixRankWarning, spsolve
 
 from .compatibility import BrightwayCompatibilityError, _load_brightway_project, _version_string
 from .foreground import ExternalInput, ForegroundAssembly
@@ -46,7 +47,12 @@ class ForegroundImpact:
 
 
 _UNITS = pint.UnitRegistry()
-_BRIGHTWAY_UNIT_ALIASES = {"m3": "meter ** 3"}
+_BRIGHTWAY_UNIT_ALIASES = {
+    "m2": "meter ** 2",
+    "m3": "meter ** 3",
+    "m2*a": "meter ** 2 * year",
+    "m3*a": "meter ** 3 * year",
+}
 
 
 def _method_version(method: tuple[str, ...], metadata: dict[str, Any]) -> str | None:
@@ -59,7 +65,7 @@ def _method_version(method: tuple[str, ...], metadata: dict[str, Any]) -> str | 
 
 def _converted_amount(amount: float, source_unit: str, target_unit: str, label: str) -> float:
     try:
-        converted = (amount * _UNITS.Unit(source_unit)).to(
+        converted = (amount * _UNITS.Unit(_BRIGHTWAY_UNIT_ALIASES.get(source_unit, source_unit))).to(
             _BRIGHTWAY_UNIT_ALIASES.get(target_unit, target_unit)
         ).magnitude
     except (pint.UndefinedUnitError, pint.DimensionalityError, ValueError) as error:
@@ -234,6 +240,14 @@ def calculate_foreground(
         )
         with warnings.catch_warnings():
             warnings.simplefilter("error", MatrixRankWarning)
+            calculation.load_lci_data()
+            # Minimum-degree ordering reduces fill-in for the shared input-output matrix.
+            calculation.solver = partial(
+                spsolve,
+                calculation.technosphere_matrix.tocsc(),
+                permc_spec="MMD_AT_PLUS_A",
+                use_umfpack=False,
+            )
             calculation.lci()
             calculation.lcia()
         score = float(calculation.score)

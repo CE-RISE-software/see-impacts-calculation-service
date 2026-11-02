@@ -6,7 +6,7 @@ The service is a containerized Python HTTP application with these active compone
 
 - `app.py` exposes health, capability, compute, diagnostic, OpenAPI, and API-documentation endpoints;
 - `compatibility.py` opens the supplied Brightway project and reports its databases and methods;
-- `import_bonsai.py` verifies and imports the pinned BONSAI IO release during image preparation;
+- `prepare_background.py` extracts and verifies the fixed BONSAI-EF3.1 project during image preparation;
 - `config.py` reads HTTP, background-project, and Brightway-workspace settings;
 - `hex_core.py` calls HEX Core for input and output model schema availability and validation;
 - `model_validation.py` rejects failed or incomplete model validation reports;
@@ -20,15 +20,16 @@ The service is a containerized Python HTTP application with these active compone
 - `integrated_lca_result.py` builds one environmental indicator and its input references in
   the Integrated LCA result structure.
 
-The HTTP application does not expose Brightway database management. The image build imports
-the bundled BONSAI 3.8-beta2 IO release into a seed project containing biosphere flows and
-registered impact methods.
+The HTTP application does not expose Brightway database management. The image build prepares
+the bundled BONSAI-EF3.1 project, preserving its background activities, elementary flows, and
+characterization links. The 25 registered EF3.1 methods are fixed configuration shared by all
+products. A request selects a method; it does not submit characterization factors or matching rules.
 
 ## Background Data and Brightway State
 
 The bundled project is `cerise_bonsai`, located by default at
 `data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`. The compressed
-seed archive and public IO release are tracked in Git. The expanded local project is ignored;
+project archive and its provenance manifest are tracked in Git. The expanded local project is ignored;
 the image prepares it at build time.
 
 Brightway project state is mutable and process-global. The compatibility probe uses
@@ -65,3 +66,7 @@ to exact identifiers in their configured databases; compatible units are convert
 rejects missing links and incompatible units and diagnoses singular calculations. Whether a
 particular foreground request is calculable depends on its exact links and demand; the prepared
 background is not altered by requests.
+
+Numerical execution uses SciPy's sparse direct solver with minimum-degree column ordering
+(`MMD_AT_PLUS_A`) to reduce factorization fill-in in the shared input-output matrix. The
+ordering changes numerical execution, while retaining the same inventory equations and factors.

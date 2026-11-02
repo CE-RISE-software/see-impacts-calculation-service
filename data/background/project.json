@@ -1,0 +1,329 @@
+{
+  "project_name": "cerise_bonsai",
+  "project_directory": "cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9",
+  "archive": "cerise_bonsai.tar.gz",
+  "archive_sha256": "6d18ee724883a558e3b4d7312eaefe4bf12c14aa1095dd410dd53d455e98b633",
+  "source_archive": "BONSAI_EF3.1_Brightway25_Project.gz",
+  "source_archive_sha256": "339e6e3199bd13c7ab5f1948bfd9626f033668dac4bfad4705d17d8c52993a0b",
+  "source_version": "BONSAI-EF3.1 snapshot 2026-10-08",
+  "source_artifact_uri": "urn:sha256:339e6e3199bd13c7ab5f1948bfd9626f033668dac4bfad4705d17d8c52993a0b",
+  "databases": {
+    "ef31_biosphere": 93993,
+    "BONSAI biosphere": 7,
+    "BONSAI": 49978
+  },
+  "methods": [
+    {
+      "name": [
+        "EF 3.1",
+        "Acidification",
+        "Accumulated Exceedance (AE)"
+      ],
+      "factor_count": 935,
+      "unit": "mol H+-Eq",
+      "version": "01.04.000",
+      "factor_set_reference": "ef-31aa.da16c3c4765540ccbf11d1935ff22c22"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Climate change",
+        "Radiative forcing as Global Warming Potential (GWP100)"
+      ],
+      "factor_count": 1099,
+      "unit": "kg CO2-Eq",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31cr.54f4488dea758642f545ebdab88aaca5"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Climate change-Biogenic",
+        "Radiative forcing as Global Warming Potential (GWP100)"
+      ],
+      "factor_count": 13,
+      "unit": "kg CO2-Eq",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31cr.82fa375f28b5e1378d4c112ecde1100c"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Climate change-Fossil",
+        "Radiative forcing as Global Warming Potential (GWP100)"
+      ],
+      "factor_count": 1074,
+      "unit": "kg CO2-Eq",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31cr.c7d0efaadbfdc86aa7ae02f3b31db4b5"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Climate change-Land use and land use change",
+        "Radiative forcing as Global Warming Potential (GWP100)"
+      ],
+      "factor_count": 12,
+      "unit": "kg CO2-Eq",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31cr.74ec1eeebea36c06673b82292deb7d70"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "EF-particulate matter",
+        "Impact on human health"
+      ],
+      "factor_count": 983,
+      "unit": "disease incidence",
+      "version": "02.00.011",
+      "factor_set_reference": "ef-31ei.59834ff61086228b2ce4eb6440825f7e"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Ecotoxicity, freshwater",
+        "Comparative Toxic Unit for ecosystems (CTUe) "
+      ],
+      "factor_count": 79349,
+      "unit": "CTUe",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31ec.36c19cd1a0a5debd9474cff9f889631e"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Ecotoxicity, freshwater_inorganics",
+        "Comparative Toxic Unit for ecosystems (CTUe) "
+      ],
+      "factor_count": 6198,
+      "unit": "CTUe",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31ec.b9151f57f4b3429c47d52d79e944dad8"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Ecotoxicity, freshwater_organics",
+        "Comparative Toxic Unit for ecosystems (CTUe) "
+      ],
+      "factor_count": 73151,
+      "unit": "CTUe",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31ec.4c51ce1eebeece5b823dfa813556f255"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Eutrophication marine",
+        "Fraction of nutrients reaching marine end compartment (N)"
+      ],
+      "factor_count": 590,
+      "unit": "kg N-Eq",
+      "version": "02.00.010",
+      "factor_set_reference": "ef-31ef.29d8d44946b0abfa865e66833b3c14ca"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Eutrophication, freshwater",
+        "Fraction of nutrients reaching freshwater end compartment (P)"
+      ],
+      "factor_count": 29,
+      "unit": "kg P-Eq",
+      "version": "01.00.010",
+      "factor_set_reference": "ef-31ef.2784a9f77d8ef4f85fe08acc8ffbe21b"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Eutrophication, terrestrial",
+        "Accumulated Exceedance (AE) "
+      ],
+      "factor_count": 575,
+      "unit": "mol N-Eq",
+      "version": "01.02.009",
+      "factor_set_reference": "ef-31ea.5a649ec347d0cba4ba646621bb6edaf2"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Human toxicity, cancer",
+        "Comparative Toxic Unit for human (CTUh) "
+      ],
+      "factor_count": 13717,
+      "unit": "CTUh",
+      "version": "01.01.000",
+      "factor_set_reference": "ef-31hc.b0488464f61af7e3d743ba21bfdff184"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Human toxicity, cancer_inorganics",
+        "Comparative Toxic Unit for human (CTUh) "
+      ],
+      "factor_count": 398,
+      "unit": "CTUh",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31hc.e310071774e14eb0f97786570b575fbc"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Human toxicity, cancer_organics",
+        "Comparative Toxic Unit for human (CTUh) "
+      ],
+      "factor_count": 13319,
+      "unit": "CTUh",
+      "version": "01.01.000",
+      "factor_set_reference": "ef-31hc.268dcb536dd7359e0708e1b3a7b1a98f"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Human toxicity, non-cancer",
+        "Comparative Toxic Unit for human (CTUh)"
+      ],
+      "factor_count": 43816,
+      "unit": "CTUh",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31hc.e7ccf7fccee27aa59994c580f1d52c1e"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Human toxicity, non-cancer_inorganics",
+        "Comparative Toxic Unit for human (CTUh)"
+      ],
+      "factor_count": 4317,
+      "unit": "CTUh",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31hc.04d64df870b46e9344efb43ebcfe4696"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Human toxicity, non-cancer_organics",
+        "Comparative Toxic Unit for human (CTUh)"
+      ],
+      "factor_count": 39499,
+      "unit": "CTUh",
+      "version": "01.00.000",
+      "factor_set_reference": "ef-31hc.cab9c142b902d07614dd2d6b44952417"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Ionising radiation, human health",
+        "Human exposure efficiency relative to U235"
+      ],
+      "factor_count": 189,
+      "unit": "kBq U235-Eq",
+      "version": "01.00.011",
+      "factor_set_reference": "ef-31ih.8ba957b6bf3114c78b3b06e4640344df"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Land use",
+        "Soil quality index"
+      ],
+      "factor_count": 36423,
+      "unit": "pt",
+      "version": "01.00.010",
+      "factor_set_reference": "ef-31ls.1b4a3713aa107847614cfdb3a67f4cf3"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Ozone depletion",
+        "Ozone Depletion Potential (ODP) "
+      ],
+      "factor_count": 124,
+      "unit": "kg CFC-11-Eq",
+      "version": "02.00.012",
+      "factor_set_reference": "ef-31oo.de55d8140824af914675b8ee2016e0a7"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Photochemical ozone formation - human health",
+        "Tropospheric ozone concentration increase"
+      ],
+      "factor_count": 1401,
+      "unit": "kg NMVOC-Eq",
+      "version": "02.01.000",
+      "factor_set_reference": "ef-31pt.1851ce849f641340bcd48835f19edd4d"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Resource use, fossils",
+        "Abiotic resource depletion fossil fuels (ADP-fossil)"
+      ],
+      "factor_count": 6,
+      "unit": "MJ",
+      "version": "01.00.010",
+      "factor_set_reference": "ef-31ra.d2baa1a06d65368ebd4039464896e5f4"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Resource use, minerals and metals",
+        "Abiotic resource depletion (ADP ultimate reserve)"
+      ],
+      "factor_count": 48,
+      "unit": "kg Sb-Eq",
+      "version": "01.00.010",
+      "factor_set_reference": "ef-31ra.aa24acfea9bf66bbf67d65ba49371743"
+    },
+    {
+      "name": [
+        "EF 3.1",
+        "Water use",
+        "User deprivation potential (deprivation-weighted water consumption)"
+      ],
+      "factor_count": 2310,
+      "unit": "m3 world Eq deprived",
+      "version": "03.00.014",
+      "factor_set_reference": "ef-31wu.741eccfe717a02cd09898ec61be24d48"
+    }
+  ],
+  "source_processed_sha256": {
+    "BONSAI-biosphere.0d52dfb2.zip": "be5495cdfd5707b8a431d4a17ae7a0e53faf4e24008f50435797c153c361cb66",
+    "BONSAI.39be4a50.zip": "dd2dac98e3053047186621205d6cf8ca04dbf9b087c3566679fcc5be7eba1d3d",
+    "ef-31aa.da16c3c4765540ccbf11d1935ff22c22.zip": "64785bcc14bae8afe3dcd537397acce1f99bdf1b526067a6119769e979d63703",
+    "ef-31cr.54f4488dea758642f545ebdab88aaca5.zip": "f1a2212f252069010ef9851b65be8b077b6ed6ab69849be97c9933ca75dff895",
+    "ef-31cr.74ec1eeebea36c06673b82292deb7d70.zip": "88b62a5b73faa827bb5ca6c36b140e0f3d1fed4c09486771456a348205d2c118",
+    "ef-31cr.82fa375f28b5e1378d4c112ecde1100c.zip": "22d0fd59a0cd4a13daeb91167d2bad590efae19c70173eef18c9f0b9ae19ff01",
+    "ef-31cr.c7d0efaadbfdc86aa7ae02f3b31db4b5.zip": "be2f8d2eecbe931ba4970d3c64796697d9cae7ab30de5e7b69a0059927b1741f",
+    "ef-31ea.5a649ec347d0cba4ba646621bb6edaf2.zip": "cdc013c51af34f5c7028a8a81a1e2351c6842476b72e62fe3a3c16f0c8f67d03",
+    "ef-31ec.36c19cd1a0a5debd9474cff9f889631e.zip": "ebfbafb84b75c66615750cef8c0265aec5f462ab27e4b7344aa33c0feff4b638",
+    "ef-31ec.4c51ce1eebeece5b823dfa813556f255.zip": "70cfd750db176743a656659e9e400c77dc682383a2c5ffb47b48e7b9b497e15f",
+    "ef-31ec.b9151f57f4b3429c47d52d79e944dad8.zip": "5e73b7c94b27dc3e46ef752e8c4002294e552ab1e528ded89031e8aeaf40ad5e",
+    "ef-31ef.2784a9f77d8ef4f85fe08acc8ffbe21b.zip": "ddd290d143d609a83a1d9a3a08b91081326d8bd2a49c0804ffe250d83ae93501",
+    "ef-31ef.29d8d44946b0abfa865e66833b3c14ca.zip": "bb8982bb91466c885e2dbcdf8dc35636a6116ae38cc90610d6d2220f7e62896b",
+    "ef-31ei.59834ff61086228b2ce4eb6440825f7e.zip": "55c392e2486af0b1293176d56c49f074875b598a146dd8fc6783ac27c7a8b400",
+    "ef-31hc.04d64df870b46e9344efb43ebcfe4696.zip": "2bd1942fedd1377cd51701dd09899b906755b54593b216f8a8e09df70659ad85",
+    "ef-31hc.268dcb536dd7359e0708e1b3a7b1a98f.zip": "ed06046a758d0543651bb37517a96929e792c775216b97730d96b64d2061ec2f",
+    "ef-31hc.b0488464f61af7e3d743ba21bfdff184.zip": "8f052450de17998598775e0d538511098550f0a6cfd8f70f53cd5461dbd24c2e",
+    "ef-31hc.cab9c142b902d07614dd2d6b44952417.zip": "a7e2d3f05e96c51e731d09f51c8e41b48d86fc72132b9c508a1c0ff63f8778af",
+    "ef-31hc.e310071774e14eb0f97786570b575fbc.zip": "0370a43326aff11ec4938fa7c2560afe1c883700afbfe341ab3748fa87d36323",
+    "ef-31hc.e7ccf7fccee27aa59994c580f1d52c1e.zip": "ba1412a5bec02e7caea21d83300b8bfd543b3120c671083bf14fc7b57484def1",
+    "ef-31ih.8ba957b6bf3114c78b3b06e4640344df.zip": "108e8d8f9c33e96a981d9b9a478411563557969f352ed69c36b2e2a63063b567",
+    "ef-31ls.1b4a3713aa107847614cfdb3a67f4cf3.zip": "052738d0e3dcecfbe887eebd610973fbbb7bb8fec71f3fbef9f0761dd1063e9e",
+    "ef-31oo.de55d8140824af914675b8ee2016e0a7.zip": "7cc71cb8686f7d0273d49cb3efb2e81ddf48bddc02559d797c84345fc8d741e2",
+    "ef-31pt.1851ce849f641340bcd48835f19edd4d.zip": "d13eaa9f8fd0d62ef9a574bbdad8b7bfe5020bd8206f6de463ee41ea3a4efa4d",
+    "ef-31ra.aa24acfea9bf66bbf67d65ba49371743.zip": "1e68f7d7b58a746e453a4c841e50efc613156a5786cafaeee667a738f5f89f45",
+    "ef-31ra.d2baa1a06d65368ebd4039464896e5f4.zip": "8e29fb00d3b16dbab45caee7acf9b562c6eb5750f4cb970e90f7fc6fe815a018",
+    "ef-31wu.741eccfe717a02cd09898ec61be24d48.zip": "61920ae8051cb7863141a1f02d8e6e570e246c6bc43c18593989f78e475f2689",
+    "ef31_biosphere.0c5f9bcf.zip": "b0e4f3bfdd2d459c5bf601b59605c7c961c3e626ba7b314d83606fa22f0a5ded"
+  },
+  "preparation": [
+    "Rename the project to cerise_bonsai; preserve database names and node identifiers.",
+    "Remove the standalone test_activities database, calculation setups, and user-interface caches.",
+    "Restore intermediate method records from processed factors, preserving values and geographic identifiers.",
+    "Correct reversed result-unit labels: fossil resource use is MJ; mineral and metal resource use is kg Sb-Eq.",
+    "Preserve all background and characterization datapackages byte for byte."
+  ]
+}

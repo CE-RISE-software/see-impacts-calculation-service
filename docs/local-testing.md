@@ -19,7 +19,7 @@ python3 -m venv .venv
 .venv/bin/python -m pytest
 ```
 
-The suite builds a fresh Brightway project from the bundled seed and BONSAI IO release, then
+The suite prepares a fresh copy of the bundled BONSAI-EF3.1 project, then
 sends the PV fixture to `POST /compute`. It fetches the latest published Product System, LCI
 Dataset, and Integrated LCA schemas from Codeberg to validate the inputs and result. The same
 suite checks concurrent requests with a synthetic background. The full local suite therefore
@@ -31,14 +31,11 @@ job does not run Brightway or check the calculated score.
 
 ## Local Background
 
-Build the local background from the seed project and bundled BONSAI IO files:
+Extract and verify the bundled BONSAI-EF3.1 project:
 
 ```bash
-mkdir -p data/background/projects
-tar -xzf data/background/cerise_bonsai.tar.gz -C data/background/projects
-.venv/bin/python -m see_impacts_calculation_service.import_bonsai \
-  data/background/bonsai-3.8-beta2 \
-  data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9 \
+.venv/bin/python -m see_impacts_calculation_service.prepare_background \
+  data/background/cerise_bonsai.tar.gz data/background/projects \
   --project-name cerise_bonsai
 ```
 

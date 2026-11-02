@@ -1,8 +1,9 @@
 # CE-RISE SEE Impacts Calculation Service
 
 This service calculates environmental impact indicators from CE-RISE Product System and LCI
-Dataset records. It uses a configured Brightway background and returns a validated Integrated
-LCA result. SEE stands for socio-economic and environmental impacts; the current calculation
+Dataset records. It uses the bundled BONSAI Brightway background and fixed Environmental
+Footprint (EF) 3.1 characterization factors, and returns a validated Integrated LCA result.
+SEE stands for socio-economic and environmental impacts; the current calculation
 endpoint covers the environmental dimension.
 
 The [CE-RISE Solution portal](https://solution.ce-rise.eu/) is the main entry point for human
