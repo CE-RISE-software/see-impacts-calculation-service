@@ -1,10 +1,10 @@
 # Compute Workflow
 
-The service calculates all configured environmental impact indicators in one request. A CE-RISE Product System
-selects the foreground activities, CE-RISE LCI Datasets supply their inventory flows, and the
-configured Brightway project supplies background activities, biosphere flows, and impact
-methods. The service validates the input records, constructs the calculation, and returns a
-validated CE-RISE Integrated LCA object. There is no separate mapping document to submit.
+The service calculates all configured environmental impact indicators in one request. A CE-RISE
+Product System selects the foreground activities, and LCI Dataset records supply their inventory
+flows. The bundled BONSAI-EF3.1 project provides background activities, elementary flows, and
+characterization factors. The service validates the input records, calculates the inventory
+once, and returns all indicators in a validated CE-RISE Integrated LCA object.
 
 ## Required Inputs
 
@@ -17,11 +17,18 @@ validated CE-RISE Integrated LCA object. There is no separate mapping document t
 | `lci_datasets` | A non-empty array of LCI Dataset records with the referenced identifiers, activities, and flows. |
 | `functional_unit` | `reference_flow_identifier`, positive `quantity`, and `unit` for the requested assessment. |
 
+## Record Relationships
+
 The Product System's dataset references must match exactly one supplied LCI Dataset each;
 referenced record versions must also match. Selected activities must exist in those datasets.
 The Product System reference flow must be a product flow produced by a selected activity, and
 its identifier, declared amount, and unit must match the LCI flow. The functional unit repeats
 that flow identifier and unit, while its quantity is the amount to assess.
+
+## Foreground and Background Links
+
+The foreground is the inventory supplied in the LCI Dataset records. The background provides
+the external activities and elementary flows referenced by that inventory.
 
 Internal foreground links are resolved from the selected activities and their flows. External
 product inputs can identify a background activity with `counterpart_activity_reference` or
@@ -30,18 +37,11 @@ product inputs can identify a background activity with `counterpart_activity_ref
 background database. Elementary flows use `flow_object_reference` values that resolve in the
 configured biosphere database. The service converts compatible flow units and rejects unresolved
 or incompatible links. The bundled BONSAI background is prepared by the image build or local
-setup; it is not included in the request.
+setup. Activity and elementary-flow identifiers in the input records provide the links to it.
 
 In the bundled project, external activities resolve in `BONSAI` and elementary flows resolve in
-`ef31_biosphere`. The 25 registered EF3.1 method entries use the fixed factors and flow links
-supplied with that project. Every request calculates all 25 indicators from one inventory;
-`GET /methods` lists them. No characterization-factor
-table or matching script is submitted with the request.
-
-The calculation applies each method's global factors. Elementary flows that resolve in the
-biosphere database but have no matching factor contribute zero to that method's indicator;
-unresolved identifiers are errors. See [Characterization and Results](scope.md#characterization-and-results)
-for geographic treatment and reproducibility.
+`ef31_biosphere`. See [Methods and Background](scope.md) for database contents, characterization
+factors, and geographic treatment.
 
 ## Send a Request
 
@@ -50,45 +50,13 @@ for geographic treatment and reproducibility.
 2. Check `GET /capabilities` for the background and `GET /methods` for the configured indicators.
 3. Send the model versions, Product System, LCI Dataset records, and functional unit to `POST /compute`.
 
-From the repository root, the committed PV fixtures can form a complete request. This example
-uses `jq`, the bundled BONSAI project, and schema versions that must also be registered in your
-HEX Core. If your HEX Core has different published versions, change the three `model_versions`
-values accordingly:
-
-```bash
-jq -n \
-  --slurpfile system tests/fixtures/pv/product-system.json \
-  --slurpfile inventory tests/fixtures/pv/lci-dataset.json \
-  '{
-    model_versions: {
-      product_system: "0.0.1",
-      lci_dataset: "0.0.1",
-      integrated_lca: "0.2.0"
-    },
-    product_system: $system[0],
-    lci_datasets: [$inventory[0]],
-    functional_unit: {
-      reference_flow_identifier: $system[0].reference_flow_specification.reference_flow_identifier,
-      quantity: 1.0,
-      unit: $system[0].reference_flow_specification.reference_flow_unit_reference
-    }
-  }' > compute-request.json
-
-curl --fail-with-body --silent --show-error \
-  -H 'Content-Type: application/json' \
-  --data-binary @compute-request.json \
-  http://127.0.0.1:8080/compute
-```
-
-For this fixture and bundled background, the climate-change indicator is approximately
-`145.817516 kg CO2-Eq` for `1 m^2` of the declared reference flow. It is one of the 25 returned
-indicators. The local full PV test checks the complete result and validates both input records
-and the output against published model schemas.
+The [PV Example](pv-example.md) provides the input records, request commands, and complete
+calculated result for a photovoltaic panel.
 
 ## Read the Response
 
 A successful response has one `lca_analysis_instances` entry containing all 25
-`assessment_results.assessment_indicators` entries. It does not use a `status` wrapper.
+`assessment_results.assessment_indicators` entries.
 
 | Location within the analysis instance | What it records |
 | --- | --- |
@@ -100,11 +68,12 @@ A successful response has one `lca_analysis_instances` entry containing all 25
 
 The [API Reference](api-reference.md#post-compute) shows the full result shape. If the
 technosphere is singular, `POST /compute` instead returns `status: "not_calculable"` with a
-`SINGULAR_TECHNOSPHERE` diagnostic and any activity groups it can identify, not an Integrated
-LCA result or score. Invalid models or links return `422`; unavailable HEX Core validation
+`SINGULAR_TECHNOSPHERE` diagnostic and identified activity groups. This response has no calculated
+indicators. Invalid models or links return `422`; unavailable HEX Core validation
 returns `503`.
 
-`POST /compute/diagnostics` accepts the same request and performs the calculation, but returns
-only whether it is calculable or the singularity diagnostic. It does not return the score or an
-Integrated LCA object. `GET /health`, `GET /capabilities`, and `GET /methods` support liveness,
-background and method inspection; they do not validate a particular compute request.
+## Diagnostic Requests
+
+`POST /compute/diagnostics` accepts the same inputs and performs the calculation, but returns
+only whether it is calculable or a singularity diagnostic. Use `POST /compute` to obtain the
+indicators; a separate diagnostic request is not required before computing results.

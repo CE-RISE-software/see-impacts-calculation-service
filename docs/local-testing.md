@@ -1,6 +1,8 @@
-# Local Testing
+# Testing
 
-Run the complete test suite or prepare the bundled background for a local HTTP service.
+The test suite covers input and output validation, foreground construction, numerical
+calculations, diagnostics, and request isolation. Service setup is documented under
+[Deployment](deployment.md).
 
 ## Setup
 
@@ -19,81 +21,50 @@ python3 -m venv .venv
 .venv/bin/python -m pytest
 ```
 
-The suite prepares a fresh copy of the bundled BONSAI-EF3.1 project, then
-sends the PV fixture to `POST /compute`. It fetches the latest published Product System, LCI
-Dataset, and Integrated LCA schemas from Codeberg to validate the inputs and result. The same
-suite checks concurrent requests with a synthetic background. The full local suite therefore
-requires network access to Codeberg. No manually prepared background project, live HEX Core,
-or opt-in flag is required. Codeberg runs the core tests on
-`codeberg-medium` and the PV input/output record validation on `codeberg-small` for pushes,
-pull requests, and releases. The full PV calculation remains in the local suite; the hosted PV
-job does not run Brightway or check the calculated scores. It validates the saved complete
-PV result in `tests/fixtures/pv/integrated-lca.json`, including all 25 indicators. The full local
-test compares every calculated indicator with that result. Small synthetic calculations also
-check that multiple indicators require only one inventory calculation and one linear solve.
+The PV integration test extracts a fresh copy of the bundled background and submits the example
+records to `POST /compute`. It compares all 25 calculated indicators with the saved result in
+`tests/fixtures/pv/integrated-lca.json`. Other numerical tests use a small synthetic background
+to check known results, unit conversion, singularity diagnostics, concurrent requests, and one
+inventory solve per request.
 
-## Local Background
+Schema validation uses the latest published Product System, LCI Dataset, and Integrated LCA
+schemas from Codeberg. These checks require network access to Codeberg and run without a live
+HEX Core service.
 
-Extract and verify the bundled BONSAI-EF3.1 project:
+## Continuous Integration
+
+Codeberg runs the core tests on `codeberg-medium` and PV record validation on `codeberg-small`
+for pushes, pull requests, and releases. The PV CI job validates the example inputs and the
+complete saved output against the published schemas. It does not run the full numerical PV
+calculation.
+
+Run the same record-validation check locally:
+
+```bash
+.venv/bin/python -m pytest -q tests/test_pv_integration.py::test_pv_records_against_published_models
+```
+
+## Background Verification
+
+The compatibility command checks that Brightway can read the background and its registered
+impact methods. Prepare the bundled project before running the check:
 
 ```bash
 .venv/bin/python -m see_impacts_calculation_service.prepare_background \
   data/background/cerise_bonsai.tar.gz data/background/projects \
   --project-name cerise_bonsai
+.venv/bin/see-impacts-compatibility
 ```
 
 The default background project location is
-`data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`. Override it with
-`BACKGROUND_PROJECT_DIR` when an approved dataset is located elsewhere. The separate
+`data/background/projects/cerise_bonsai.c4e8a461df1485d0b80d98d3e46a35b9`.
+`BACKGROUND_PROJECT_DIR` selects a different project location. The separate
 `BRIGHTWAY_WORKSPACE_DIR` holds Brightway's writable project registry and defaults to
 `runtime/brightway`.
 
-## Brightway Compatibility Probe
-
-Run the probe against the configured background project:
-
-```bash
-.venv/bin/see-impacts-compatibility
-```
-
-The probe activates the supplied data and reports the registered databases and methods as
-JSON. It also reads a record and its exchanges from each database, opens their processed
-datapackages, and loads factors from one method. It does not create foreground data or run an
-LCIA calculation. The writable workspace is separate from the read-only source archive.
-
-To use a non-default location without changing the environment permanently:
-
-```bash
-BACKGROUND_PROJECT_DIR=/path/to/project \
-BRIGHTWAY_WORKSPACE_DIR=/tmp/see-impacts-brightway \
-.venv/bin/see-impacts-compatibility
-```
-
-## HTTP Service
-
-Start the service from the repository root. Replace the example HEX Core address with one
-reachable from this machine before sending compute requests:
-
-```bash
-HEX_CORE_BASE_URL=http://hex-core-host:8080 \
-  .venv/bin/python -m uvicorn see_impacts_calculation_service.app:app --host 127.0.0.1 --port 8080
-```
-
-In a second terminal, check the live service and background project:
-
-```bash
-curl -sS http://127.0.0.1:8080/health
-curl -sS http://127.0.0.1:8080/capabilities
-curl -sS http://127.0.0.1:8080/methods
-curl -sS http://127.0.0.1:8080/openapi.json
-```
-
-`POST /compute` requires a reachable HEX Core with the requested Product System, LCI Dataset,
-and Integrated LCA schemas. It validates the inputs, calculates all configured indicators from
-one inventory, and validates the generated output. Use the [PV request](api-overview.md#send-a-request) to exercise
-this path. Invalid inputs or unresolved links return `422`; a singular technosphere returns a
-`not_calculable` diagnostic without a score. `GET /capabilities` checks that the background
-project opens, not whether a particular request can be calculated.
+The command reports database and method metadata as JSON. It reads a record and its exchanges
+from each database, opens the processed datapackages, and loads factors from a registered
+method. This verifies data access; numerical calculations are covered by the integration tests.
 
 ## Container Smoke Test
 
@@ -106,9 +77,16 @@ podman build -t see-impacts-calculation-service:local .
 Run it with the included BONSAI background project:
 
 ```bash
-podman run --rm -p 8080:8080 \
+podman run --rm -p 8081:8080 \
   see-impacts-calculation-service:local
 ```
 
-Then call `GET /capabilities`. A successful response proves that the container can inspect the
-bundled background project.
+In a second terminal, check the background:
+
+```bash
+curl --fail-with-body -sS http://127.0.0.1:8081/capabilities
+```
+
+This check reads the bundled background and reports its databases and methods. It does not
+require HEX Core. The [Compute Workflow](api-overview.md) covers calculation requests with
+input and output validation; the [PV Example](pv-example.md) provides a complete request.

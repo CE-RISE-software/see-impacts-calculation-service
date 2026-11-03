@@ -1,9 +1,9 @@
 [book]
 title = "CE-RISE SEE Impacts Calculation Service"
-authors = ["CE-RISE consortium", "NILU"]
+authors = ["CE-RISE consortium", "NILU", "Leiden University", "Empa"]
 language = "en"
 src = "."
-description = "Documentation for the CE-RISE SEE impacts calculation service."
+description = "Environmental impact calculations from CE-RISE records using BONSAI and EF3.1."
 
 [build]
 build-dir = "book"

@@ -1,47 +1,40 @@
 # CE-RISE SEE Impacts Calculation Service
 
-A service for calculating the environmental footprints of product systems from CE-RISE
-Product System and LCI Dataset records. It uses Brightway with the BONSAI background and fixed
-Environmental Footprint (EF) 3.1 characterization factors, returning results as validated
-CE-RISE Integrated LCA data objects with the functional unit, assessment methods, and calculation
-provenance.
+A containerized HTTP service for calculating environmental footprints from CE-RISE Product
+System and LCI Dataset records using Brightway, the BONSAI background, and Environmental
+Footprint (EF) 3.1 characterization factors.
 
-SEE stands for socio-economic and environmental impacts; the current calculation
-endpoint covers the environmental dimension.
+Each successful request calculates the inventory once and returns all 25 configured
+environmental indicators in one validated CE-RISE Integrated LCA object. The result includes
+units, methods, the functional unit, input references, and data and software provenance.
 
-The [CE-RISE Solution portal](https://solution.ce-rise.eu/) is the main entry point for human
-users exploring the wider solution and its components.
+SEE stands for socio-economic and environmental. This service provides environmental impact
+calculations.
 
-## Request and Result
+Related data models and software are described on the
+[CE-RISE Solution website](https://solution.ce-rise.eu/).
 
-One `POST /compute` request contains:
+## Using the Service
 
-1. `model_versions` for Product System, LCI Dataset, and Integrated LCA validation in HEX Core;
-2. one `product_system` record selecting the foreground activities and reference flow;
-3. the referenced `lci_datasets` with activities and inventory flows;
-4. a `functional_unit` naming that reference flow, its unit, and the requested quantity.
+Submit a Product System, its LCI Dataset records, a functional unit, and their schema versions
+to `POST /compute`. The service validates the records through HEX Core, assembles the foreground,
+links it to the BONSAI background, and calculates the indicators. HEX Core validates the
+Integrated LCA result before it is returned.
 
-The service validates the records, resolves foreground and background links, calculates the
-inventory once, and applies all 25 configured EF3.1 methods. It validates and returns one
-Integrated LCA object containing every indicator's score, unit, method, and factor-set reference,
-together with the functional unit, input references, and available data and
-software provenance. A singular calculation returns a `not_calculable` diagnostic instead of a
-score. Nonconforming records or unresolved links return `422`.
+- [Compute Workflow](api-overview.md): input records, inventory links, and result structure.
+- [PV Example](pv-example.md): a complete request and calculated results for a photovoltaic panel.
+- [Methods and Background](scope.md): the configured EF3.1 categories, result units, and factor coverage.
+- [API Reference](api-reference.md): endpoints, request fields, responses, and diagnostics.
 
-The [Compute Workflow](api-overview.md) explains the record relationships and gives a runnable
-PV request using the bundled BONSAI background. The [API Reference](api-reference.md) defines
-the endpoint responses and errors.
+## Deployment and Integration
 
-## Start Using It
+[Deployment](deployment.md) covers installation, container builds, runtime settings, and service
+checks. [HEX Core Integration](integration.md) describes schema validation and authentication.
 
-Prepare the background and start the service from source using [Local Testing](local-testing.md),
-or follow [Deployment](deployment.md) for the image. Configure a reachable HEX Core with the
-requested model versions, then inspect `GET /capabilities` and `GET /methods` for the configured
-background and methods. Send the four-field JSON request to `POST /compute`.
+## Engineering
 
-The [HEX Core integration](integration.md) page covers the validation dependency.
-[Architecture](architecture.md) describes the internal calculation, and
-[Service Scope](scope.md) explains the assessment boundary.
+[Architecture](architecture.md) documents foreground assembly, project isolation, and numerical
+execution. [Testing](local-testing.md) covers the regression suite and Codeberg CI checks.
 
 Funded by the European Union under Grant Agreement No. 101092281 — CE-RISE.  
 Views and opinions expressed are those of the author(s) only and do not necessarily reflect those of the European Union or the granting authority (HADEA).
