@@ -1,10 +1,11 @@
 # Changelog
 
-## [0.0.1] - Unreleased
+All notable changes to the CE-RISE SEE Impacts Calculation Service project will be documented in this file.
 
-Initial release:
+## [0.0.1] - 2026-11-03
 
-- All environmental indicators in one Integrated LCA result from CE-RISE inputs, with HEX Core validation.
-- BONSAI background with 25 fixed EF3.1 methods sharing one inventory calculation.
-- Integrated LCA results, isolated execution, and calculation diagnostics.
-- Container deployment and a validated PV example.
+### Added
+- Environmental footprint calculations from CE-RISE records using the bundled BONSAI background
+- All 25 EF3.1 indicators in one Integrated LCA object, with methods, units, and provenance
+- HEX Core input and output validation and calculation diagnostics
+- Containerized HTTP API, documentation, and a complete PV example
