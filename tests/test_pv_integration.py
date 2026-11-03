@@ -20,8 +20,6 @@ from packaging.version import Version
 
 from see_impacts_calculation_service.app import create_app
 from see_impacts_calculation_service.config import RuntimeConfig
-from see_impacts_calculation_service.foreground_calculation import ForegroundImpact
-from see_impacts_calculation_service.integrated_lca_result import build_integrated_lca_result
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -145,7 +143,6 @@ async def _compute(
             "quantity": 1.0,
             "unit": "m^2",
         },
-        "impact_method": METHOD,
     }
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://testserver"
@@ -171,8 +168,17 @@ def test_pv_fixture_with_bundled_background(
 
     workspace = tmp_path / "request-workspace"
     result = asyncio.run(_compute(project, workspace, published_validator))
-    indicator = result["lca_analysis_instances"][0]["assessment_results"]["assessment_indicators"][0]
-    assert indicator["indicator_identifier"] == " / ".join(METHOD)
+    indicators = result["lca_analysis_instances"][0]["assessment_results"]["assessment_indicators"]
+    expected_result = json.loads((FIXTURE / "integrated-lca.json").read_text())
+    expected_indicators = expected_result["lca_analysis_instances"][0]["assessment_results"]["assessment_indicators"]
+    _assert_complete_indicators(result)
+    assert len(indicators) == len(expected_indicators)
+    for actual, expected in zip(indicators, expected_indicators, strict=True):
+        assert actual["indicator_identifier"] == expected["indicator_identifier"]
+        assert actual["indicator_result"]["numeric_value"] == pytest.approx(
+            expected["indicator_result"]["numeric_value"], rel=1e-7, abs=1e-12
+        )
+    indicator = next(item for item in indicators if item["indicator_identifier"] == " / ".join(METHOD))
     assert indicator["indicator_result"]["numeric_value"] == pytest.approx(EXPECTED_SCORE, abs=0.001)
     assert indicator["indicator_result"]["unit"] == "kg CO2-Eq"
     assert indicator["method_version"] == "01.00.000"
@@ -199,31 +205,8 @@ def test_pv_records_against_published_models(
     validator = published_validator
     system = json.loads((FIXTURE / "product-system.json").read_text())
     dataset = json.loads((FIXTURE / "lci-dataset.json").read_text())
-    impact = ForegroundImpact(
-        product_system_identifier=system["product_system_identifier"],
-        reference_flow_identifier=system["reference_flow_specification"]["reference_flow_identifier"],
-        functional_unit_quantity=1.0,
-        functional_unit_unit="m^2",
-        method=METHOD,
-        score=EXPECTED_SCORE,
-        score_unit="kg CO2-Eq",
-        bw2data_version="4.7",
-        bw2calc_version="2.5.0",
-        method_version="01.00.000",
-        factor_set_reference="ef-31cr.54f4488dea758642f545ebdab88aaca5",
-        background_database_version=BACKGROUND_METADATA["source_version"],
-        background_source_artifact_uri=BACKGROUND_METADATA["source_artifact_uri"],
-    )
-    result = build_integrated_lca_result(
-        impact,
-        product_system_version=validator.schemas["product-system"]["version"],
-        lci_dataset_version=validator.schemas["lci-dataset"]["version"],
-        product_system=system,
-        lci_datasets=[dataset],
-        background_project_name="cerise_bonsai",
-        background_database_name="BONSAI",
-        software_version="0.0.1",
-    )
+    result = json.loads((FIXTURE / "integrated-lca.json").read_text())
+    _assert_complete_indicators(result)
     records = {
         "product-system": system,
         "lci-dataset": dataset,
@@ -238,3 +221,21 @@ def test_pv_records_against_published_models(
         ("integrated-lca", {"lca_analysis_instances": "invalid"}),
     ):
         assert not validator.validators[family].is_valid(record), family
+
+    invalid_result = json.loads(json.dumps(result))
+    invalid_result["lca_analysis_instances"][0]["assessment_results"]["assessment_indicators"][-1][
+        "indicator_result"
+    ]["numeric_value"] = "invalid"
+    assert not validator.validators["integrated-lca"].is_valid(invalid_result)
+
+
+def _assert_complete_indicators(result: dict) -> None:
+    indicators = result["lca_analysis_instances"][0]["assessment_results"]["assessment_indicators"]
+    methods = sorted(BACKGROUND_METADATA["methods"], key=lambda entry: entry["name"])
+    assert len(indicators) == len(methods) == 25
+    assert len({indicator["indicator_identifier"] for indicator in indicators}) == 25
+    for indicator, method in zip(indicators, methods, strict=True):
+        assert indicator["assessment_method"] == " / ".join(method["name"])
+        assert indicator["indicator_result"]["unit"] == method["unit"]
+        assert indicator["method_version"] == method["version"]
+        assert indicator["calculation_model_or_factor_set_reference"] == method["factor_set_reference"]

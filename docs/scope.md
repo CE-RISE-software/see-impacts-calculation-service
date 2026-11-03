@@ -1,12 +1,12 @@
 # Service Scope
 
-The service calculates one environmental impact indicator per request for a CE-RISE Product
+The service calculates environmental impact indicators for a CE-RISE Product
 System. A request supplies the Product System, its referenced LCI Dataset records, a quantity
-for the declared reference flow, and an impact method registered in the configured Brightway
-project. The container includes the coauthors' BONSAI-EF3.1 background project with 25 registered
+for the declared reference flow, and input and output model versions. The container includes
+the coauthors' BONSAI-EF3.1 background project with 25 registered
 method entries. Its characterization factors and elementary-flow links are fixed configuration
-shared by all products. A request selects one method and supplies its foreground. Another
-prepared project can be configured for deployment.
+shared by all products. Every request calculates all configured indicators from one inventory.
+Another prepared project can be configured for deployment.
 
 Applicability depends on the supplied foreground and on whether its background activity and
 elementary-flow references resolve in that project. It is not defined by a list of supported
@@ -16,27 +16,29 @@ missing providers.
 ## Characterization and Results
 
 The adopted configuration is the supplied BONSAI-EF3.1 project. Its 25 registered entries
-include impact categories and subcategories. Each request selects one entry and returns one
-characterized indicator in that method's unit. The service applies the stored factor values;
+include impact categories and subcategories. Each request solves the inventory once, applies
+each method to that same inventory, and returns all 25 characterized indicators in one Integrated
+LCA object. Each indicator has its own unit, method version, and factor-set reference.
+The service applies the stored factor values;
 changing them requires preparing and deploying an updated background project.
 
 The foreground must reference activities in `BONSAI` and elementary flows in `ef31_biosphere`.
 Compatible units are converted. An unknown identifier is an error. A resolved elementary flow
-with no factor in the selected method contributes zero to that indicator, while remaining part
+with no factor in a particular method contributes zero to that indicator, while remaining part
 of the calculated inventory.
 
-The calculation uses the selected method's global (`GLO`) factors. Regional factors are retained
+The calculation uses each method's global (`GLO`) factors. Regional factors are retained
 in the supplied project, but Brightway's standard LCIA calculation filters them out. Geographic
 background differences enter through the selected BONSAI activities; foreground location
 metadata does not automatically select country-specific characterization factors. This follows
 the [Brightway LCIA implementation](https://docs.brightway.dev/en/latest/_modules/bw2calc/lca.html#LCA.load_lcia_data).
 
 To reproduce a result, retain the input records, functional unit, background snapshot, and
-selected method and factor set. Comparisons between alternatives require compatible functional
+configured methods and factor sets. Comparisons between alternatives require compatible functional
 units and study boundaries and the same background and method setup. Replacing the background
 or factors can change scores even with an unchanged foreground. The Integrated LCA output
-records the available background version, source-archive identifier, method version, and
-factor-set reference for this purpose.
+records the available background version and source-archive identifier, plus each indicator's
+method version and factor-set reference for this purpose.
 
 ## Validation and Calculation
 
@@ -48,9 +50,9 @@ return errors rather than a result.
 
 ## Results and Diagnostics
 
-`POST /compute` returns an Integrated LCA object with one environmental indicator, the assessed
-functional unit, method, and available data and software provenance. HEX Core validates the
-generated object against the requested Integrated LCA model version before it is returned.
+`POST /compute` returns one Integrated LCA object with all environmental indicators, the assessed
+functional unit, each method's provenance, and available data and software provenance. HEX Core
+validates the generated object against the requested Integrated LCA model version before it is returned.
 
 `POST /compute/diagnostics` attempts the same calculation but returns only whether it is
 calculable. If the technosphere is singular, either endpoint returns a diagnostic with any

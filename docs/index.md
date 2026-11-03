@@ -1,8 +1,11 @@
 # CE-RISE SEE Impacts Calculation Service
 
-This service calculates environmental impact indicators from CE-RISE Product System and LCI
-Dataset records. It uses the bundled BONSAI Brightway background and fixed Environmental
-Footprint (EF) 3.1 characterization factors, and returns a validated Integrated LCA result.
+A service for calculating the environmental footprints of product systems from CE-RISE
+Product System and LCI Dataset records. It uses Brightway with the BONSAI background and fixed
+Environmental Footprint (EF) 3.1 characterization factors, returning results as validated
+CE-RISE Integrated LCA data objects with the functional unit, assessment methods, and calculation
+provenance.
+
 SEE stands for socio-economic and environmental impacts; the current calculation
 endpoint covers the environmental dimension.
 
@@ -16,12 +19,12 @@ One `POST /compute` request contains:
 1. `model_versions` for Product System, LCI Dataset, and Integrated LCA validation in HEX Core;
 2. one `product_system` record selecting the foreground activities and reference flow;
 3. the referenced `lci_datasets` with activities and inventory flows;
-4. a `functional_unit` naming that reference flow, its unit, and the requested quantity;
-5. one `impact_method` identifier selected from `GET /methods`.
+4. a `functional_unit` naming that reference flow, its unit, and the requested quantity.
 
-The service validates the records, resolves foreground and background links, calculates one
-indicator, and validates the generated Integrated LCA object. A successful response includes
-the score and unit, functional unit, input references, selected method, and available data and
+The service validates the records, resolves foreground and background links, calculates the
+inventory once, and applies all 25 configured EF3.1 methods. It validates and returns one
+Integrated LCA object containing every indicator's score, unit, method, and factor-set reference,
+together with the functional unit, input references, and available data and
 software provenance. A singular calculation returns a `not_calculable` diagnostic instead of a
 score. Nonconforming records or unresolved links return `422`.
 
@@ -33,8 +36,8 @@ the endpoint responses and errors.
 
 Prepare the background and start the service from source using [Local Testing](local-testing.md),
 or follow [Deployment](deployment.md) for the image. Configure a reachable HEX Core with the
-requested model versions, then inspect `GET /capabilities` and choose a method from
-`GET /methods`. Send the five-field JSON request to `POST /compute`.
+requested model versions, then inspect `GET /capabilities` and `GET /methods` for the configured
+background and methods. Send the four-field JSON request to `POST /compute`.
 
 The [HEX Core integration](integration.md) page covers the validation dependency.
 [Architecture](architecture.md) describes the internal calculation, and

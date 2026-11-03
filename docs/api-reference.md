@@ -40,11 +40,11 @@ project. This check does not establish that a particular request can be calculat
 ## `GET /methods`
 
 Returns the full sorted set of impact-method identifiers registered in the configured
-Brightway project. Pass one `methods` entry unchanged as `impact_method` in a compute request.
-This is method discovery, not a guarantee that a particular request can be solved.
+Brightway project. Every compute request applies all of these methods to the same calculated
+inventory. This is method discovery, not a guarantee that a particular request can be solved.
 
 The response contains `project_name`, `method_count`, and `methods`. Each entry in `methods`
-is an array of strings. The PV example uses the registered identifier
+is an array of strings. For example, the climate-change indicator uses the registered identifier
 `["EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)"]`.
 The bundled project supplies 25 fixed EF3.1 method entries.
 An unavailable project returns `503 BRIGHTWAY_PROJECT_UNAVAILABLE`.
@@ -62,9 +62,10 @@ If the project cannot be opened, the endpoint returns `503`:
 
 ## `POST /compute`
 
-This endpoint validates input models through HEX Core, assembles a foreground, calculates one
-environmental indicator, then validates and returns an Integrated LCA object. Its calculation
-depends on the configured background data, requested method, and resolvable inputs.
+This endpoint validates input models through HEX Core, assembles a foreground, solves the
+inventory once, and applies every configured impact method. It validates and returns one
+Integrated LCA object containing all 25 environmental indicators for the bundled EF3.1 project.
+The calculation depends on the configured background data and resolvable inputs.
 
 ### Required Request Fields
 
@@ -74,7 +75,6 @@ depends on the configured background data, requested method, and resolvable inpu
 | `product_system` | One Product System object conforming to the selected version. |
 | `lci_datasets` | Non-empty array of LCI Dataset objects conforming to the selected version. |
 | `functional_unit` | Object with the Product System's `reference_flow_identifier`, a positive finite `quantity`, and its declared `unit`. |
-| `impact_method` | Non-empty array of strings exactly matching a registered method returned by `GET /methods`. |
 
 The [Compute Workflow](api-overview.md#required-inputs) explains the required links between
 the CE-RISE records. Its [PV example](api-overview.md#send-a-request) builds and sends a
@@ -83,9 +83,11 @@ complete request from the committed fixtures.
 ### Response
 
 A successful request returns an Integrated LCA object after HEX Core validates it against the
-requested `model_versions.integrated_lca` schema. This example follows the PV request in the
-Compute Workflow. The timestamp is illustrative, and the score is rounded from the tested PV
-result:
+requested `model_versions.integrated_lca` schema. The complete tested PV result, including all
+25 indicators, is in [`tests/fixtures/pv/integrated-lca.json`](https://codeberg.org/CE-RISE-software/see-impacts-calculation-service/src/branch/main/tests/fixtures/pv/integrated-lca.json).
+The abbreviated example below shows only its climate-change indicator to illustrate the
+structure. Actual responses contain every indicator. The timestamp is illustrative, and the
+score is rounded:
 
 ```json
 {
@@ -163,7 +165,7 @@ returns `200` with the same `not_calculable` diagnostic shape documented below, 
 
 ## `POST /compute/diagnostics`
 
-Accepts the same request as `POST /compute`, including `impact_method`.
+Accepts the same four-field request as `POST /compute`.
 The service validates the CE-RISE inputs through HEX Core, assembles the selected foreground,
 links external inputs to the configured background and biosphere databases, and attempts the
 calculation in a disposable per-request project. The prepared background is not modified. This
@@ -180,8 +182,7 @@ For the PV request in the Compute Workflow, the calculation completes and diagno
       "reference_flow_identifier": "PVPanelManufacturingCNAct_flow0_PhotovoltaicPanelSingleSi",
       "quantity": 1.0,
       "unit": "m^2"
-    },
-    "impact_method": ["EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)"]
+    }
   },
   "diagnostic": null
 }

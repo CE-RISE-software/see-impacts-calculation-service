@@ -46,6 +46,9 @@ def build(builder_dir: Path, source_dir: Path, *, singular: bool = False) -> Non
     method = bd.Method(("synthetic", "climate"))
     method.register(unit="kg CO2-eq")
     method.write([(co2.key, 3.0)])
+    second_method = bd.Method(("synthetic", "second-indicator"))
+    second_method.register(unit="test-eq", version="2")
+    second_method.write([(co2.key, 5.0)])
     shutil.copytree(bd.projects.dir, source_dir)
     (source_dir / ".project-name.json").write_text(
         json.dumps({"name": "synthetic"}), encoding="utf-8"

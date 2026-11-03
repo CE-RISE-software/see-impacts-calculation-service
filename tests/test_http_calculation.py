@@ -41,8 +41,8 @@ def test_compute_http_with_real_synthetic_brightway_project(tmp_path):
     assert report["methods_status"] == 200
     assert report["methods"] == {
         "project_name": "synthetic",
-        "method_count": 1,
-        "methods": [["synthetic", "climate"]],
+        "method_count": 2,
+        "methods": [["synthetic", "climate"], ["synthetic", "second-indicator"]],
     }
     assert report["compute_status"] == 200
     assert report["second_compute_status"] == 200
@@ -56,12 +56,19 @@ def test_compute_http_with_real_synthetic_brightway_project(tmp_path):
         assert datetime.fromisoformat(timestamp).tzinfo is not None
     assert report["second_result"] == report["result"]
     assert report["invalid_compute_status"] == 422
-    assert report["invalid_compute_result"]["detail"]["code"] == "CALCULATION_PRECONDITION_FAILED"
+    assert report["invalid_compute_result"]["detail"]["code"] == "CALCULATION_INPUT_INVALID"
     assert report["remaining_request_projects"] == []
     assert hashlib.sha256((source / "lci" / "databases.db").read_bytes()).hexdigest() == background_digest
     instance = report["result"]["lca_analysis_instances"][0]
     indicator = instance["assessment_results"]["assessment_indicators"][0]
     assert indicator["indicator_result"] == {"numeric_value": 54.0, "unit": "kg CO2-eq"}
+    indicators = instance["assessment_results"]["assessment_indicators"]
+    assert len(indicators) == 2
+    assert indicators[1]["indicator_result"] == {"numeric_value": 90.0, "unit": "test-eq"}
+    assert indicators[1]["method_version"] == "2"
+    assert indicators[1]["calculation_model_or_factor_set_reference"] == (
+        "synthetics.8ee086df6d32030e7c9e9c3dd398de48"
+    )
     tools = instance["study_metadata"]["assessment_toolchain"]["tool_executions"]
     assert [(item["tool_identifier"], item["tool_version"]) for item in tools] == [
         ("bw2data", "4.7"),

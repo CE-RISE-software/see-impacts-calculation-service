@@ -27,7 +27,10 @@ requires network access to Codeberg. No manually prepared background project, li
 or opt-in flag is required. Codeberg runs the core tests on
 `codeberg-medium` and the PV input/output record validation on `codeberg-small` for pushes,
 pull requests, and releases. The full PV calculation remains in the local suite; the hosted PV
-job does not run Brightway or check the calculated score.
+job does not run Brightway or check the calculated scores. It validates the saved complete
+PV result in `tests/fixtures/pv/integrated-lca.json`, including all 25 indicators. The full local
+test compares every calculated indicator with that result. Small synthetic calculations also
+check that multiple indicators require only one inventory calculation and one linear solve.
 
 ## Local Background
 
@@ -86,8 +89,8 @@ curl -sS http://127.0.0.1:8080/openapi.json
 ```
 
 `POST /compute` requires a reachable HEX Core with the requested Product System, LCI Dataset,
-and Integrated LCA schemas. It validates the inputs, calculates the requested method, and
-validates the generated output. Use the [PV request](api-overview.md#send-a-request) to exercise
+and Integrated LCA schemas. It validates the inputs, calculates all configured indicators from
+one inventory, and validates the generated output. Use the [PV request](api-overview.md#send-a-request) to exercise
 this path. Invalid inputs or unresolved links return `422`; a singular technosphere returns a
 `not_calculable` diagnostic without a score. `GET /capabilities` checks that the background
 project opens, not whether a particular request can be calculated.

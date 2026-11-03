@@ -1,10 +1,15 @@
 import asyncio
+import json
 import logging
+from dataclasses import asdict
+from unittest.mock import Mock
 
 import pytest
 
 from see_impacts_calculation_service.assessment_inputs import ReferenceFlowDemand
 from see_impacts_calculation_service.foreground import ForegroundAssembly
+from see_impacts_calculation_service.foreground_calculation import ForegroundImpact, ImpactIndicator
+import see_impacts_calculation_service.project_lifecycle as lifecycle
 from see_impacts_calculation_service.project_lifecycle import (
     IsolatedWorkerError,
     calculate_isolated_foreground,
@@ -61,10 +66,48 @@ def test_worker_stderr_is_logged_but_not_returned(
                 project_name="example",
                 background_database_name="background",
                 biosphere_database_name="biosphere",
-                method=("example", "method"),
             )
         )
 
     assert "worker import failed" in caplog.text
     assert "worker import failed" not in str(error.value)
     assert list((tmp_path / "workspace" / "requests").iterdir()) == []
+
+
+def test_all_indicators_share_one_project_copy(tmp_path, monkeypatch):
+    source = tmp_path / "background"
+    source.mkdir()
+    (source / ".project-name.json").write_text(json.dumps({"name": "synthetic"}))
+    assembly = ForegroundAssembly(
+        activities=(), outputs=(), inputs=(), external_inputs=(), external_treatments=(),
+        elementary_flows=(), reference_output=("dataset", "flow"),
+        demand=ReferenceFlowDemand("system", "dataset", "activity", "flow", 1.0, "kg", 1.0),
+    )
+    impact = ForegroundImpact(
+        product_system_identifier="system", reference_flow_identifier="flow",
+        functional_unit_quantity=1.0, functional_unit_unit="kg",
+        indicators=(
+            ImpactIndicator(("test", "first"), 2.0, "kg"),
+            ImpactIndicator(("test", "second"), 3.0, "m3"),
+        ),
+        bw2data_version="4.7", bw2calc_version="2.5.0",
+    )
+    copy_project = Mock(wraps=lifecycle.shutil.copytree)
+    calculate = Mock(return_value=impact)
+    monkeypatch.setattr(lifecycle.shutil, "copytree", copy_project)
+    monkeypatch.setattr(
+        "see_impacts_calculation_service.foreground_calculation.calculate_foreground", calculate
+    )
+    request_dir = tmp_path / "request"
+    result = lifecycle._worker({
+        "assembly": asdict(assembly), "project_dir": str(source),
+        "request_dir": str(request_dir), "project_name": "synthetic",
+        "background_database_name": "background", "biosphere_database_name": "biosphere",
+    })
+    assert result == impact
+    copy_project.assert_called_once_with(source, request_dir / "project")
+    calculate.assert_called_once_with(
+        assembly, project_dir=request_dir / "project", workspace_dir=request_dir / "brightway",
+        project_name="synthetic", background_database_name="background",
+        biosphere_database_name="biosphere",
+    )

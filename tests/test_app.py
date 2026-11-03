@@ -6,7 +6,7 @@ import pytest
 from see_impacts_calculation_service.app import create_app
 from see_impacts_calculation_service.compatibility import BrightwayCompatibilityError
 from see_impacts_calculation_service.config import RuntimeConfig
-from see_impacts_calculation_service.foreground_calculation import ForegroundCalculationError, ForegroundImpact
+from see_impacts_calculation_service.foreground_calculation import ForegroundCalculationError, ForegroundImpact, ImpactIndicator
 from see_impacts_calculation_service.singularity import (
     InvolvedActivity,
     SingularComponent,
@@ -152,7 +152,6 @@ def test_compute_reports_calculation_precondition_failure(tmp_path, monkeypatch)
             "quantity": 4.0,
             "unit": "kg",
         },
-        "impact_method": ["example", "method"],
     }
     async def fail_calculation(*args, **kwargs):
         raise ForegroundCalculationError("Unavailable method.")
@@ -212,7 +211,6 @@ def test_compute_reports_model_validation_failure(tmp_path):
                     "quantity": 1,
                     "unit": "kg",
                 },
-                "impact_method": ["example", "method"],
             },
         )
     )
@@ -257,7 +255,6 @@ def test_compute_reports_hex_core_unavailable(tmp_path):
                     "quantity": 1,
                     "unit": "kg",
                 },
-                "impact_method": ["example", "method"],
             },
         )
     )
@@ -299,7 +296,6 @@ def test_compute_rejects_missing_hex_schema(tmp_path):
                     "quantity": 1,
                     "unit": "kg",
                 },
-                "impact_method": ["example", "method"],
             },
         )
     )
@@ -333,6 +329,11 @@ def test_compute_schema_declares_input_and_result_model_versions(tmp_path):
     assert properties["integrated_lca"]["description"] == (
         "Version of the output integrated-lca model."
     )
+    request_schema = app.openapi()["components"]["schemas"]["ComputeRequest"]
+    assert set(request_schema["required"]) == {
+        "model_versions", "product_system", "lci_datasets", "functional_unit"
+    }
+    assert set(request_schema["properties"]) == set(request_schema["required"])
 
 
 def test_compute_requires_a_functional_unit(tmp_path):
@@ -424,7 +425,6 @@ def _diagnostic_request():
             "quantity": 4.0,
             "unit": "kg",
         },
-        "impact_method": ["example", "method"],
     }
 
 
@@ -434,9 +434,10 @@ def _calculated_impact():
         reference_flow_identifier="flow-1",
         functional_unit_quantity=4.0,
         functional_unit_unit="kg",
-        method=("example", "method"),
-        score=12.5,
-        score_unit="kg CO2-eq",
+        indicators=(
+            ImpactIndicator(("example", "method"), 12.5, "kg CO2-eq"),
+            ImpactIndicator(("example", "other"), 7.0, "test-eq", "2", "other-factors"),
+        ),
         bw2data_version="4.7",
         bw2calc_version="2.5.0",
     )
@@ -492,6 +493,16 @@ def test_compute_returns_hex_core_validated_integrated_lca(tmp_path, monkeypatch
         "assessment_method": "example / method",
         "indicator_result": {"numeric_value": 12.5, "unit": "kg CO2-eq"},
     }
+    assert instance["assessment_results"]["assessment_indicators"][1] == {
+        "assessment_dimension": "ENVIRONMENTAL",
+        "indicator_identifier": "example / other",
+        "indicator_name": "other",
+        "assessment_method": "example / other",
+        "indicator_result": {"numeric_value": 7.0, "unit": "test-eq"},
+        "method_version": "2",
+        "calculation_model_or_factor_set_reference": "other-factors",
+    }
+    assert len(instance["assessment_results"]["assessment_indicators"]) == 2
     assert len(instance["assessment_inputs"]["input_references"]) == 3
     assert instance["assessment_inputs"]["input_references"][-1] == {
         "input_role": "BACKGROUND_INVENTORY",
@@ -658,7 +669,7 @@ def test_compute_diagnostics_reports_singular_activities(tmp_path, monkeypatch):
     )
 
     async def fail_calculation(*args, **kwargs):
-        assert kwargs["method"] == ("example", "method")
+        assert "method" not in kwargs
         raise ForegroundCalculationError("singular", diagnostic=diagnostic)
 
     monkeypatch.setattr("see_impacts_calculation_service.app.calculate_foreground", fail_calculation)

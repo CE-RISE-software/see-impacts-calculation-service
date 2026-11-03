@@ -14,16 +14,18 @@ The service is a containerized Python HTTP application with these active compone
 - `foreground.py` assembles selected CE-RISE activities and flows into an internal foreground
   graph, retaining external and elementary exchanges for later linking.
 - `foreground_calculation.py` links exact background and biosphere identifiers, builds an
-  in-memory foreground datapackage, and runs an internal LCIA.
+  in-memory foreground datapackage, solves the inventory once, and characterizes it with every
+  configured method.
 - `project_lifecycle.py` copies the prepared project for each request, runs the calculation in
   an isolated worker process, and removes the request copy afterward.
-- `integrated_lca_result.py` builds one environmental indicator and its input references in
-  the Integrated LCA result structure.
+- `integrated_lca_result.py` puts all calculated environmental indicators and their individual
+  method provenance, shared functional unit, and input references in one Integrated LCA object.
 
 The HTTP application does not expose Brightway database management. The image build prepares
 the bundled BONSAI-EF3.1 project, preserving its background activities, elementary flows, and
 characterization links. The 25 registered EF3.1 methods are fixed configuration shared by all
-products. A request selects a method; it does not submit characterization factors or matching rules.
+products. Every request calculates all configured methods; it does not submit characterization
+factors or matching rules.
 
 ## Background Data and Brightway State
 
@@ -43,10 +45,10 @@ immutable. Do not use the background source directory as the Brightway workspace
 `GET /capabilities` is the operational endpoint for checking the background project;
 `GET /methods` lists every registered impact-method identifier.
 `POST /compute` exposes a JSON schema with model-version fields for `product-system`,
-`lci-dataset`, and `integrated-lca`, and requires a functional unit and impact method. It
+`lci-dataset`, and `integrated-lca`, and requires a functional unit. It
 verifies that HEX Core has JSON Schemas for the requested versions, validates the Product
 System and each LCI Dataset, assembles the foreground, and runs an in-memory calculation.
-On success it builds an Integrated LCA object, records the method, background and software
+On success it builds one Integrated LCA object containing all indicators and their method, background and software
 provenance available from the calculation, validates the object through HEX Core, and returns it.
 Model or reference failures return `422`; missing schemas or unavailable HEX Core return
 `503`; invalid generated output returns `500` without publishing the object. Singular
@@ -66,6 +68,11 @@ to exact identifiers in their configured databases; compatible units are convert
 rejects missing links and incompatible units and diagnoses singular calculations. Whether a
 particular foreground request is calculable depends on its exact links and demand; the prepared
 background is not altered by requests.
+
+Each request creates one project copy and one foreground datapackage and solves the combined
+inventory once. Brightway switches characterization methods over that solved inventory without
+rebuilding the foreground or solving the technosphere again. All indicators are returned together;
+failure of an individual method fails the request rather than silently returning a partial result.
 
 Numerical execution uses SciPy's sparse direct solver with minimum-degree column ordering
 (`MMD_AT_PLUS_A`) to reduce factorization fill-in in the shared input-output matrix. The

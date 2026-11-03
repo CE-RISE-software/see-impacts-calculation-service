@@ -26,7 +26,8 @@ The build extracts and verifies this linked project directly. It does not re-imp
 BONSAI release or reconstruct the elementary-flow matching. Each request uses a disposable copy
 of the prepared project, with its own foreground. Factor tables are fixed service configuration.
 
-Calculations use the selected method's global factors through Brightway's standard LCIA path.
+Each request calculates the inventory once and applies all 25 methods using their global factors
+through Brightway's standard LCIA path, returning all indicators in one Integrated LCA object.
 The regional factor records remain in the archive. Runtime geographic treatment and factor
 coverage are described under
 [Characterization and Results](../../docs/scope.md#characterization-and-results).

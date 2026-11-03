@@ -1,16 +1,17 @@
 # CE-RISE SEE Impacts Calculation Service
 
-A containerized HTTP service that calculates one environmental impact indicator for a CE-RISE
-Product System. It combines the supplied LCI Dataset foreground with the configured BONSAI
-background and its fixed Environmental Footprint (EF) 3.1 characterization factors, then returns
-a validated Integrated LCA result or a calculation diagnostic.
+A service for calculating the environmental footprints of product systems from CE-RISE
+Product System and LCI Dataset records. It uses Brightway with the BONSAI background and fixed
+Environmental Footprint (EF) 3.1 characterization factors, returning results as validated
+CE-RISE Integrated LCA data objects with the functional unit, assessment methods, and calculation
+provenance.
 
 For the CE-RISE solution and its components, use the
 [CE-RISE Solution portal](https://solution.ce-rise.eu/) as the main entry point for human users.
 
-## Calculate an Impact
+## Calculate Environmental Impacts
 
-Send `POST /compute` with five fields:
+Send `POST /compute` with four fields:
 
 | Field | What to supply |
 | --- | --- |
@@ -18,7 +19,6 @@ Send `POST /compute` with five fields:
 | `product_system` | The CE-RISE Product System record selecting the activities and declaring the reference flow. |
 | `lci_datasets` | A non-empty array of CE-RISE LCI Dataset records referenced by the Product System. |
 | `functional_unit` | The declared reference-flow identifier and unit, plus the positive quantity to assess. |
-| `impact_method` | One complete method identifier, copied as an array from `GET /methods`. |
 
 Product System dataset references must resolve to the supplied LCI records, selected activities
 must exist in those records, and the reference flow must have the same identifier, quantity, and
@@ -27,22 +27,27 @@ must resolve in the configured Brightway project. Callers do not upload a Bright
 submit a separate mapping file.
 
 The bundled project provides 25 EF3.1 method entries, including impact categories and their
-subcategories. Select one per request. Characterization factors and their elementary-flow
-links are part of the fixed project configuration and apply to all products; they are not
+subcategories. Every request calculates all 25 indicators from one inventory calculation.
+Characterization factors and their elementary-flow links are part of the fixed project
+configuration and apply to all products; they are not
 uploaded with a calculation request.
 
 Inputs must use the bundled project's BONSAI activity codes and EF elementary-flow identifiers.
-Characterization uses the selected method's global factors. A resolved elementary flow without
+Characterization uses each method's global factors. A resolved elementary flow without
 a matching factor contributes zero to that indicator. For comparisons between alternatives,
 align the functional unit and study boundaries and use the same background and method setup.
 See [Characterization and Results](docs/scope.md#characterization-and-results) for the factor
 coverage, geographic treatment, and information needed to reproduce a result.
 
-On success, the response is one Integrated LCA object with one environmental indicator. It
-contains the requested functional unit, the numeric result and unit, the selected method, input
-references, and available background, factor-set, software, and timestamp provenance. A
+On success, the response is one CE-RISE Integrated LCA object containing all environmental
+indicators, each with its numeric result, unit, method, and factor-set provenance. It also
+contains the requested functional unit, input references, and available background, software,
+and timestamp provenance. A
 singular calculation instead returns `status: "not_calculable"` and any activity groups it can
 identify, without a score. Invalid inputs or unresolved links return `422`.
+
+The [complete PV result](tests/fixtures/pv/integrated-lca.json) shows all 25 indicators and the
+shared assessment metadata in the returned object.
 
 The service validates the inputs and generated result through HEX Core. Configure a reachable
 `HEX_CORE_BASE_URL` with the requested model versions before calling `POST /compute`. See the
@@ -57,7 +62,7 @@ The service provides:
 - `GET /health` for service identity and configuration inspection;
 - `GET /capabilities` for Brightway project and method availability;
 - `GET /methods` for the complete set of registered impact-method identifiers;
-- `POST /compute` for one environmental impact indicator in an Integrated LCA object;
+- `POST /compute` for all configured environmental indicators in one Integrated LCA object;
 - `POST /compute/diagnostics` for request-specific calculation checks, including identified
   activities when the technosphere is singular;
 - `GET /openapi.json` and interactive API documentation at `/docs`;

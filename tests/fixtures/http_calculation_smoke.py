@@ -59,7 +59,6 @@ async def main() -> None:
                 "quantity": 4.0,
                 "unit": "kg",
             },
-            "impact_method": ["synthetic", "climate"],
         }
         response, second_response = await asyncio.gather(
             client.post("/compute", json=request),
@@ -70,7 +69,9 @@ async def main() -> None:
             for call in validator.calls
             if call["model_family"] == "integrated-lca"
         ]
-        invalid_request = {**request, "impact_method": ["missing", "method"]}
+        invalid_request = {**request, "functional_unit": {
+            **request["functional_unit"], "reference_flow_identifier": "missing-flow"
+        }}
         invalid_response = await client.post("/compute", json=invalid_request)
     print(json.dumps({
         "methods_status": methods.status_code,

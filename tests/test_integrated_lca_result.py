@@ -1,4 +1,4 @@
-from see_impacts_calculation_service.foreground_calculation import ForegroundImpact
+from see_impacts_calculation_service.foreground_calculation import ForegroundImpact, ImpactIndicator
 from see_impacts_calculation_service.integrated_lca_result import build_integrated_lca_result
 
 
@@ -8,9 +8,7 @@ def test_result_references_only_selected_input_datasets():
         reference_flow_identifier="flow-1",
         functional_unit_quantity=4.0,
         functional_unit_unit="kg",
-        method=("example", "method"),
-        score=12.5,
-        score_unit="kg CO2-eq",
+        indicators=(ImpactIndicator(("example", "method"), 12.5, "kg CO2-eq"),),
         bw2data_version="4.7",
         bw2calc_version="2.5.0",
     )
@@ -53,13 +51,18 @@ def test_result_reports_available_method_and_background_metadata():
         reference_flow_identifier="flow-1",
         functional_unit_quantity=1.0,
         functional_unit_unit="m^2",
-        method=("EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)"),
-        score=145.817516,
-        score_unit="kg CO2-Eq",
+        indicators=(
+            ImpactIndicator(
+                method=("EF 3.1", "Climate change", "Radiative forcing as Global Warming Potential (GWP100)"),
+                score=145.817516,
+                score_unit="kg CO2-Eq",
+                method_version="01.00.000",
+                factor_set_reference="ef-31cr.54f4488dea758642f545ebdab88aaca5",
+            ),
+            ImpactIndicator(("EF 3.1", "Other", "Other indicator"), 2.0, "other-eq"),
+        ),
         bw2data_version="4.7",
         bw2calc_version="2.5.0",
-        method_version="01.00.000",
-        factor_set_reference="ef-31cr.54f4488dea758642f545ebdab88aaca5",
         background_database_version="BONSAI-EF3.1 snapshot 2026-10-08",
         background_source_artifact_uri=(
             "urn:sha256:339e6e3199bd13c7ab5f1948bfd9626f033668dac4bfad4705d17d8c52993a0b"
@@ -96,3 +99,8 @@ def test_result_reports_available_method_and_background_metadata():
     assert indicator["calculation_model_or_factor_set_reference"] == (
         "ef-31cr.54f4488dea758642f545ebdab88aaca5"
     )
+    indicators = instance["assessment_results"]["assessment_indicators"]
+    assert len(indicators) == 2
+    assert indicators[1]["indicator_result"] == {"numeric_value": 2.0, "unit": "other-eq"}
+    assert "method_version" not in indicators[1]
+    assert "calculation_model_or_factor_set_reference" not in indicators[1]

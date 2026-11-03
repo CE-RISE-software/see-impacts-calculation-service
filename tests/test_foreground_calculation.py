@@ -12,6 +12,7 @@ from see_impacts_calculation_service.foreground_calculation import (
     _converted_amount,
     _method_version,
     _required_database_names,
+    calculate_foreground,
 )
 
 
@@ -60,6 +61,29 @@ def test_rejects_missing_background_dependency():
         _required_database_names(bd, "background", "biosphere")
 
 
+@pytest.mark.parametrize(
+    ("methods", "message"),
+    [
+        ({}, "no impact methods"),
+        ({("test", "first"): {"unit": "kg"}, ("test", "second"): {}}, "no result unit"),
+    ],
+)
+def test_checks_all_method_metadata_before_calculating(tmp_path, monkeypatch, methods, message):
+    monkeypatch.setattr(
+        "see_impacts_calculation_service.foreground_calculation._load_brightway_project",
+        lambda *args: (SimpleNamespace(methods=methods), None),
+    )
+    with pytest.raises(ForegroundCalculationError, match=message):
+        calculate_foreground(
+            SimpleNamespace(),
+            project_dir=tmp_path,
+            workspace_dir=tmp_path,
+            project_name="synthetic",
+            background_database_name="background",
+            biosphere_database_name="biosphere",
+        )
+
+
 def test_combines_foreground_background_and_direct_emission(tmp_path):
     fixture_dir = Path(__file__).parent / "fixtures"
     source = tmp_path / "background"
@@ -79,8 +103,14 @@ def test_combines_foreground_background_and_direct_emission(tmp_path):
     )
 
     report = json.loads(result.stdout.rsplit("\n", 2)[-2])
-    assert report["impact"]["score"] == 54.0
-    assert report["impact"]["score_unit"] == "kg CO2-eq"
+    assert report["impact"]["indicators"] == [
+        {"method": ["synthetic", "climate"], "score": 54.0, "score_unit": "kg CO2-eq",
+         "method_version": None, "factor_set_reference": "syntheticc.3906eb7eec60e14caf0f0e812312b82f"},
+        {"method": ["synthetic", "second-indicator"], "score": 90.0, "score_unit": "test-eq",
+         "method_version": "2", "factor_set_reference": "synthetics.8ee086df6d32030e7c9e9c3dd398de48"},
+    ]
+    assert report["inventory_calculations"] == 1
+    assert report["linear_solves"] == 1
     assert report["databases"] == ["background", "biosphere"]
 
 
@@ -125,7 +155,7 @@ def test_converts_foreground_input_to_background_unit(tmp_path):
     )
 
     report = json.loads(result.stdout.rsplit("\n", 2)[-2])
-    assert report["impact"]["score"] == 54.0
+    assert [indicator["score"] for indicator in report["impact"]["indicators"]] == [54.0, 90.0]
 
 
 def test_background_linked_waste_adds_treatment_impact(tmp_path):
@@ -147,7 +177,7 @@ def test_background_linked_waste_adds_treatment_impact(tmp_path):
     )
 
     report = json.loads(result.stdout.rsplit("\n", 2)[-2])
-    assert report["impact"]["score"] == 60.0
+    assert [indicator["score"] for indicator in report["impact"]["indicators"]] == [60.0, 100.0]
 
 
 def test_singular_diagnostic_identifies_reachable_and_separate_activities(tmp_path):

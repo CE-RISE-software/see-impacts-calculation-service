@@ -4,9 +4,12 @@ import json
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from unittest.mock import patch
 
+import bw2calc as bc
 import bw2data as bd
 
+import see_impacts_calculation_service.foreground_calculation as calculation_module
 from see_impacts_calculation_service.foreground import assemble_foreground
 from see_impacts_calculation_service.foreground_calculation import (
     ForegroundCalculationError,
@@ -96,21 +99,30 @@ def main() -> None:
         reference_flow_identifier="product-output", quantity=4.0, unit="kg",
     )
     try:
-        result = calculate_foreground(
-            assembly,
-            project_dir=source,
-            workspace_dir=workspace,
-            project_name="synthetic",
-            background_database_name="background",
-            biosphere_database_name="biosphere",
-            method=("synthetic", "climate"),
-        )
+        original_lci = bc.LCA.lci
+        with (
+            patch.object(bc.LCA, "lci", autospec=True, side_effect=original_lci) as inventory,
+            patch.object(calculation_module, "spsolve", wraps=calculation_module.spsolve) as solve,
+        ):
+            result = calculate_foreground(
+                assembly,
+                project_dir=source,
+                workspace_dir=workspace,
+                project_name="synthetic",
+                background_database_name="background",
+                biosphere_database_name="biosphere",
+            )
     except ForegroundCalculationError as error:
         if error.diagnostic is None:
             raise
         print(json.dumps({"status": "not_calculable", "diagnostic": asdict(error.diagnostic)}))
         return
-    print(json.dumps({"impact": asdict(result), "databases": sorted(bd.databases)}))
+    print(json.dumps({
+        "impact": asdict(result),
+        "databases": sorted(bd.databases),
+        "inventory_calculations": inventory.call_count,
+        "linear_solves": solve.call_count,
+    }))
 
 
 if __name__ == "__main__":

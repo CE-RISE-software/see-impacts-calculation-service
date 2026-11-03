@@ -1,4 +1,4 @@
-"""HTTP service for CE-RISE SEE impacts calculation diagnostics."""
+"""HTTP service for CE-RISE environmental impact calculations and diagnostics."""
 
 from __future__ import annotations
 
@@ -57,10 +57,6 @@ class ComputeRequest(BaseModel):
     )
     functional_unit: FunctionalUnit = Field(
         description="Requested quantity and unit for the Product System reference flow."
-    )
-    impact_method: list[str] = Field(
-        min_length=1,
-        description="Registered Brightway impact-method identifier for this request.",
     )
 
 
@@ -175,7 +171,6 @@ def create_app(
         request_summary = {
             "product_system_identifier": assembly.demand.product_system_identifier,
             "functional_unit": request.functional_unit.model_dump(),
-            "impact_method": request.impact_method,
         }
         if not calculation_slots.acquire(blocking=False):
             raise HTTPException(
@@ -193,7 +188,6 @@ def create_app(
                 project_name=runtime_config.background_project_name,
                 background_database_name=runtime_config.background_database_name,
                 biosphere_database_name=runtime_config.biosphere_database_name,
-                method=tuple(request.impact_method),
                 timeout_secs=runtime_config.calculation_timeout_secs,
             )
         except IsolatedWorkerError as error:

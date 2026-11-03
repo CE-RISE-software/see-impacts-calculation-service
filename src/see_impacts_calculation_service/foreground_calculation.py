@@ -29,18 +29,23 @@ class ForegroundCalculationError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class ImpactIndicator:
+    method: tuple[str, ...]
+    score: float
+    score_unit: str
+    method_version: str | None = None
+    factor_set_reference: str | None = None
+
+
+@dataclass(frozen=True)
 class ForegroundImpact:
     product_system_identifier: str
     reference_flow_identifier: str
     functional_unit_quantity: float
     functional_unit_unit: str
-    method: tuple[str, ...]
-    score: float
-    score_unit: str
+    indicators: tuple[ImpactIndicator, ...]
     bw2data_version: str
     bw2calc_version: str
-    method_version: str | None = None
-    factor_set_reference: str | None = None
     background_database_version: str | None = None
     background_source_artifact_uri: str | None = None
     calculation_timestamp: str | None = None
@@ -203,9 +208,8 @@ def calculate_foreground(
     project_name: str,
     background_database_name: str,
     biosphere_database_name: str,
-    method: tuple[str, ...],
 ) -> ForegroundImpact:
-    """Run one LCIA without persisting foreground nodes or altering background data."""
+    """Solve the inventory once and characterize it with every configured method."""
 
     try:
         bd, bc = _load_brightway_project(
@@ -213,8 +217,13 @@ def calculate_foreground(
         )
     except BrightwayCompatibilityError as error:
         raise ForegroundCalculationError(str(error)) from error
-    if method not in bd.methods:
-        raise ForegroundCalculationError(f"Impact method {method!r} is unavailable.")
+    methods = tuple(sorted(bd.methods))
+    if not methods:
+        raise ForegroundCalculationError("The configured project has no impact methods.")
+    for method in methods:
+        unit = bd.methods[method].get("unit")
+        if not isinstance(unit, str) or not unit:
+            raise ForegroundCalculationError(f"Impact method {method!r} has no result unit.")
     for name in (background_database_name, biosphere_database_name):
         if name not in bd.databases:
             raise ForegroundCalculationError(f"Brightway database {name!r} is unavailable.")
@@ -232,7 +241,8 @@ def calculate_foreground(
         biosphere_database=biosphere,
     )
     packages = [bd.Database(name).datapackage() for name in required_databases]
-    packages.extend((bd.Method(method).datapackage(), foreground_package))
+    packages.append(foreground_package)
+    indicators = []
     try:
         calculation = bc.LCA(
             demand={reference_id: assembly.demand.functional_unit_quantity},
@@ -249,28 +259,44 @@ def calculate_foreground(
                 use_umfpack=False,
             )
             calculation.lci()
-            calculation.lcia()
-        score = float(calculation.score)
+            # Only the characterization changes; the solved inventory is reused.
+            for method in methods:
+                try:
+                    calculation.switch_method([bd.Method(method).datapackage()])
+                    calculation.lcia()
+                    score = float(calculation.score)
+                except Exception as error:
+                    raise ForegroundCalculationError(
+                        f"Impact method {method!r} could not characterize the solved inventory."
+                    ) from error
+                if not isfinite(score):
+                    raise ForegroundCalculationError(
+                        f"Brightway produced a non-finite score for impact method {method!r}."
+                    )
+                method_metadata = bd.methods[method]
+                factor_set_reference = method_metadata.get("abbreviation")
+                if not isinstance(factor_set_reference, str) or not factor_set_reference:
+                    factor_set_reference = None
+                indicators.append(ImpactIndicator(
+                    method=method,
+                    score=score,
+                    score_unit=method_metadata["unit"],
+                    method_version=_method_version(method, method_metadata),
+                    factor_set_reference=factor_set_reference,
+                ))
     except MatrixRankWarning as error:
         diagnostic = diagnose_singularity(calculation, bd)
         raise ForegroundCalculationError(
             "The combined technosphere is singular; no unique LCIA score is available.",
             diagnostic=diagnostic,
         ) from error
+    except ForegroundCalculationError:
+        raise
     except Exception as error:
         raise ForegroundCalculationError(
             "Brightway could not solve the combined foreground and background calculation."
         ) from error
-    if not isfinite(score):
-        raise ForegroundCalculationError("Brightway produced a non-finite LCIA score.")
-    score_unit = bd.methods[method].get("unit")
-    if not isinstance(score_unit, str) or not score_unit:
-        raise ForegroundCalculationError(f"Impact method {method!r} has no result unit.")
-    method_metadata = bd.methods[method]
     database_metadata = bd.databases[background_database_name]
-    factor_set_reference = method_metadata.get("abbreviation")
-    if not isinstance(factor_set_reference, str) or not factor_set_reference:
-        factor_set_reference = None
     database_version = database_metadata.get("source_version") or database_metadata.get("version")
     if not isinstance(database_version, str) or not database_version:
         database_version = None
@@ -282,13 +308,9 @@ def calculate_foreground(
         reference_flow_identifier=assembly.demand.flow_identifier,
         functional_unit_quantity=assembly.demand.functional_unit_quantity,
         functional_unit_unit=assembly.demand.unit,
-        method=method,
-        score=score,
-        score_unit=score_unit,
+        indicators=tuple(indicators),
         bw2data_version=_version_string(getattr(bd, "__version__", "unknown")),
         bw2calc_version=_version_string(getattr(bc, "__version__", "unknown")),
-        method_version=_method_version(method, method_metadata),
-        factor_set_reference=factor_set_reference,
         background_database_version=database_version,
         background_source_artifact_uri=background_source_uri,
         calculation_timestamp=datetime.now(UTC).isoformat(),

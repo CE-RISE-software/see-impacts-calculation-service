@@ -25,7 +25,7 @@ from .foreground import (
     ForegroundInput,
     ForegroundOutput,
 )
-from .foreground_calculation import ForegroundCalculationError, ForegroundImpact
+from .foreground_calculation import ForegroundCalculationError, ForegroundImpact, ImpactIndicator
 from .singularity import InvolvedActivity, SingularComponent, SingularityDiagnostic
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,6 @@ async def calculate_isolated_foreground(
     project_name: str,
     background_database_name: str,
     biosphere_database_name: str,
-    method: tuple[str, ...],
     timeout_secs: int = 900,
 ) -> ForegroundImpact:
     """Create a fresh project in another process and discard it after one request."""
@@ -113,7 +112,6 @@ async def calculate_isolated_foreground(
             "project_name": project_name,
             "background_database_name": background_database_name,
             "biosphere_database_name": biosphere_database_name,
-            "method": method,
         }
         try:
             process = await asyncio.create_subprocess_exec(
@@ -173,7 +171,10 @@ async def calculate_isolated_foreground(
         )
         raise IsolatedWorkerError("Isolated Brightway worker returned an unknown status.")
     impact = response["impact"]
-    impact["method"] = tuple(impact["method"])
+    impact["indicators"] = tuple(
+        ImpactIndicator(**{**indicator, "method": tuple(indicator["method"])})
+        for indicator in impact["indicators"]
+    )
     return ForegroundImpact(**impact)
 
 
@@ -195,7 +196,6 @@ def _worker(payload: dict[str, Any]) -> ForegroundImpact:
         project_name=payload["project_name"],
         background_database_name=payload["background_database_name"],
         biosphere_database_name=payload["biosphere_database_name"],
-        method=tuple(payload["method"]),
     )
 
 
