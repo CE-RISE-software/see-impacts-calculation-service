@@ -13,7 +13,6 @@ authors = [
   { name = "CE-RISE consortium" },
 ]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
   "License :: OSI Approved :: European Union Public Licence 1.2 (EUPL 1.2)",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
