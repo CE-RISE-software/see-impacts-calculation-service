@@ -2,6 +2,7 @@ cff-version: 1.2.0
 message: v0.0.1 - Initial release
 title: CE-RISE SEE Impacts Calculation Service
 type: software
+doi: 10.5281/zenodo.23913388
 authors:
   - given-names: Riccardo
     family-names: Boero
@@ -28,6 +29,10 @@ authors:
     email: roland.hischier@empa.ch
     orcid: 'https://orcid.org/0000-0002-1084-7665'
     affiliation: Empa
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23913388
+    description: This DOI represents all software versions.
 repository-code: 'https://codeberg.org/CE-RISE-software/see-impacts-calculation-service'
 url: 'https://ce-rise-software.codeberg.page/see-impacts-calculation-service/'
 abstract: >-

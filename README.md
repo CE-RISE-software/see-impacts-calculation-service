@@ -1,5 +1,7 @@
 # CE-RISE SEE Impacts Calculation Service
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23913388.svg)](https://doi.org/10.5281/zenodo.23913388)
+
 A containerized HTTP service for calculating environmental footprints from CE-RISE Product
 System and LCI Dataset records using Brightway, the BONSAI background, and Environmental
 Footprint (EF) 3.1 characterization factors.
