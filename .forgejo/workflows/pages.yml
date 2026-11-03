@@ -11,10 +11,16 @@ jobs:
         runs-on: codeberg-tiny
 
         steps:
-            - name: Checkout
-              uses: https://github.com/actions/checkout@v4
-              with:
-                  fetch-depth: 0
+            - name: Download source
+              run: |
+                  set -euo pipefail
+                  archive="$(mktemp)"
+                  trap 'rm -f "$archive"' EXIT
+                  curl --fail --location --silent --show-error --retry 3 \
+                    "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.tar.gz" \
+                    --output "$archive"
+                  tar -xzf "$archive" --strip-components=1 --directory "$GITHUB_WORKSPACE"
+                  test -f "$GITHUB_WORKSPACE/docs/book.toml"
 
             - name: Install mdBook
               run: |
